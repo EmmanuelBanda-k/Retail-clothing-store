@@ -10,12 +10,12 @@ if (!supported.has(command)) {
 
 const candidates = [
   process.env.PSQL_PATH,
-  'psql',
   'C:\\Program Files\\PostgreSQL\\14\\bin\\psql.exe',
-  'C:\\Program Files\\PostgreSQL\\18\\bin\\psql.exe'
+  'C:\\Program Files\\PostgreSQL\\18\\bin\\psql.exe',
+  'psql'
 ].filter(Boolean);
 
-const psql = candidates.find(candidate => candidate === 'psql' || existsSync(candidate));
+const psql = candidates.find(candidate => existsSync(candidate)) || 'psql';
 const databaseUrl = process.env.DATABASE_URL;
 
 if (!databaseUrl) {
@@ -37,7 +37,7 @@ const testFiles = [
 
 for (const file of command === 'setup' ? setupFiles : testFiles) {
   console.log(`Running ${file}`);
-  const result = spawnSync(psql, [databaseUrl, '-X', '-v', 'ON_ERROR_STOP=1', '-f', file], {
+  const result = spawnSync(psql, ['-X', '-v', 'ON_ERROR_STOP=1', '-f', file, databaseUrl], {
     stdio: 'inherit',
     shell: psql === 'psql'
   });
