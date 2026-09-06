@@ -9,6 +9,7 @@ import {
   refundSaleInStore,
   totalProductStock
 } from './core.js';
+import { databaseAvailable, posApi } from './api.js';
 
 /* =========================================================
    Retail Clothing Store Management System
@@ -18,6 +19,7 @@ import {
 
 /* ---------- DATA LAYER ---------- */
 let db, ui;
+let persistent = false;
 
 function seed(){
   const p = (id,sku,name,cat,brand,price,cost,stock)=>({id,sku,name,cat,brand,price,cost,stock});
@@ -75,7 +77,17 @@ function stockValue(){ return calculateStockValue(db.products); }
 function lowStock(){ return getLowStockProducts(db.products); }
 function cartTotals(lines){ return calculateCartTotals(lines); }
 
-function commitSale(items, method, cashier, when, silent){
+async function commitSale(items, method, cashier, when, silent){
+  if(persistent){
+    try{
+      const result=await posApi.completeSale({
+        storeId:ui.user.store_id, cashierId:ui.user.id, method, items
+      });
+      db.products=result.snapshot.products; db.sales=result.snapshot.sales;
+      if(!silent) toast('Sale '+result.sale.id+' recorded');
+      return {ok:true,sale:result.sale};
+    }catch(error){ return {ok:false,msg:error.message}; }
+  }
   const result = commitSaleToStore({
     products:db.products, sales:db.sales, nextSale:db.nextSale,
     items, method, cashier, when
@@ -87,10 +99,20 @@ function commitSale(items, method, cashier, when, silent){
   return {ok:true, sale};
 }
 
-function refundSale(id){
+async function refundSale(id){
+  if(persistent){
+    try{
+      const sale=db.sales.find(item=>item.id===id);
+      const snapshot=await posApi.refundSale(sale.databaseId,{ownerId:ui.user.id,reason:'Customer return'});
+      db.products=snapshot.products; db.sales=snapshot.sales;
+      toast('Sale '+id+' refunded, stock returned');
+      return true;
+    }catch(error){ toast(error.message); return false; }
+  }
   const result = refundSaleInStore({products:db.products, sales:db.sales, id});
   if(!result.ok) return;
   toast('Sale '+id+' refunded, stock returned');
+  return true;
 }
 
 function sameDay(iso,d){ const x=new Date(iso); return x.toDateString()===d.toDateString(); }
@@ -150,9 +172,18 @@ $('#signin').onclick = attemptLogin;
 $('#p').addEventListener('keydown', e=>{ if(e.key==='Enter') attemptLogin(); });
 $('#u').addEventListener('keydown', e=>{ if(e.key==='Enter') $('#p').focus(); });
 
-function attemptLogin(){
+async function attemptLogin(){
   const u=$('#u').value.trim().toLowerCase(), p=$('#p').value.trim();
-  const found = db.users.find(x=>x.u===u && x.pin===p);
+  const button=$('#signin'); button.disabled=true; button.textContent='Signing in...';
+  let found;
+  try{
+    if(persistent){
+      found=(await posApi.login(u,p)).user;
+      const snapshot=await posApi.snapshot(found.store_id);
+      db={...db,...snapshot};
+    }else found=db.users.find(x=>x.u===u && x.pin===p);
+  }catch(error){ toast(error.message); }
+  button.disabled=false; button.textContent='Sign in';
   if(!found){ $('#loginErr').style.display='block'; return; }
   $('#loginErr').style.display='none';
   ui = {user:found, view:'dash', cart:[], search:'', cat:'All', lastReceipt:null};
@@ -177,7 +208,7 @@ function render(){
   if(!can(ui.view)) ui.view = PERMISSIONS[ui.user.role][0];
   $('#nav').innerHTML = VIEWS.filter(v=>can(v[0]))
     .map(([id,label])=>`<button class="${ui.view===id?'on':''}" data-v="${id}">${label}</button>`).join('')
-    + `<div class="nav-note">Proof of concept. Data is held in memory and resets when the page reloads.</div>`;
+    + `<div class="nav-note">${persistent?'PostgreSQL connected. Sales and inventory persist across devices.':'Offline demonstration. Data resets when the page reloads.'}</div>`;
   $('#nav').querySelectorAll('button').forEach(b=>b.onclick=()=>{ ui.view=b.dataset.v; render(); });
   ({dash:viewDash, till:viewTill, stock:viewStock, reports:viewReports, sales:viewSales, project:viewProject})[ui.view]();
 }
@@ -316,7 +347,7 @@ function viewTill(){
   document.querySelectorAll('.size').forEach(b=>b.onclick=()=>{
     const {sku,size}=b.dataset, p=findProduct(sku);
     const line = ui.cart.find(l=>l.sku===sku&&l.size===size);
-    if(line) line.qty++; else ui.cart.push({sku, name:p.name, size, qty:1, price:p.price});
+    if(line) line.qty++; else ui.cart.push({sku, variantId:p.variant_ids?.[size], name:p.name, size, qty:1, price:p.price});
     viewTill();
   });
   document.querySelectorAll('[data-inc]').forEach(b=>b.onclick=()=>{
@@ -331,9 +362,10 @@ function viewTill(){
   document.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{ ui.cart.splice(b.dataset.rm,1); viewTill(); });
 
   const clearBtn=$('#clear'); if(clearBtn) clearBtn.onclick=()=>{ ui.cart=[]; ui.lastReceipt=null; viewTill(); };
-  $('#pay').onclick=()=>{
-    const res = commitSale(ui.cart, $('#method').value, ui.user.name);
-    if(!res.ok){ toast(res.msg); return; }
+  $('#pay').onclick=async()=>{
+    const pay=$('#pay'); pay.disabled=true; pay.textContent='Recording...';
+    const res = await commitSale(ui.cart, $('#method').value, ui.user.name);
+    if(!res.ok){ toast(res.msg); pay.disabled=false; pay.textContent='Take payment'; return; }
     ui.lastReceipt=res.sale; ui.cart=[]; viewTill();
     window.scrollTo({top:document.body.scrollHeight, behavior:'smooth'});
   };
@@ -394,24 +426,42 @@ function viewStock(){
     </table>
   </div>`;
 
-  document.querySelectorAll('[data-restock]').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('[data-restock]').forEach(b=>b.onclick=async()=>{
     const p=findProduct(b.dataset.restock);
     const size=prompt('Which size are you receiving? S, M, L or XL','M');
     if(!size||!SIZES.includes(size.toUpperCase())) return;
     const n=parseInt(prompt('How many units?','10'),10);
     if(!n||n<1) return;
-    p.stock[size.toUpperCase()]+=n;
+    if(persistent){
+      try{
+        const snapshot=await posApi.receiveStock({
+          storeId:ui.user.store_id,userId:ui.user.id,
+          variantId:p.variant_ids[size.toUpperCase()],quantity:n
+        });
+        db.products=snapshot.products; db.sales=snapshot.sales;
+      }catch(error){toast(error.message);return;}
+    }else p.stock[size.toUpperCase()]+=n;
     toast(n+' units of '+p.name+' received');
     viewStock();
   });
 
-  $('#addProd').onclick=()=>{
+  $('#addProd').onclick=async()=>{
     const name=$('#nName').value.trim(), brand=$('#nBrand').value.trim()||'Unbranded';
     const cost=+$('#nCost').value, price=+$('#nPrice').value, qty=+$('#nQty').value;
     if(!name||!price){ toast('Enter at least a name and a selling price'); return; }
-    const id=db.nextProduct++;
-    const stock={}; SIZES.forEach(s=>stock[s]=qty||0);
-    db.products.push({id, sku:'URB-'+(9000+id), name, cat:$('#nCat').value, brand, price, cost:cost||Math.round(price*0.6), stock});
+    if(persistent){
+      try{
+        const snapshot=await posApi.addProduct({
+          storeId:ui.user.store_id,userId:ui.user.id,name,category:$('#nCat').value,
+          brand,cost:cost||Math.round(price*0.6),price,quantity:qty||0
+        });
+        db.products=snapshot.products; db.sales=snapshot.sales;
+      }catch(error){toast(error.message);return;}
+    }else{
+      const id=db.nextProduct++;
+      const stock={}; SIZES.forEach(s=>stock[s]=qty||0);
+      db.products.push({id, sku:'URB-'+(9000+id), name, cat:$('#nCat').value, brand, price, cost:cost||Math.round(price*0.6), stock});
+    }
     toast(name+' added to the catalogue');
     viewStock();
   };
@@ -501,9 +551,9 @@ function viewSales(){
       </tr>`).join('')}</tbody>
     </table>
   </div>`;
-  document.querySelectorAll('[data-refund]').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('[data-refund]').forEach(b=>b.onclick=async()=>{
     if(!confirm('Refund sale '+b.dataset.refund+' and return the items to stock?')) return;
-    refundSale(b.dataset.refund); viewSales();
+    await refundSale(b.dataset.refund); viewSales();
   });
 }
 
@@ -552,4 +602,8 @@ function viewProject(){
 
 /* ---------- BOOT ---------- */
 seed();
+databaseAvailable().then(available=>{
+  persistent=available;
+  if(available) toast('PostgreSQL persistence is available');
+});
 $('#u').focus();

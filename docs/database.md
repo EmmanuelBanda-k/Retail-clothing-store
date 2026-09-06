@@ -61,3 +61,16 @@ npm run db:test
 ```
 
 GitHub Actions executes the same database tests against a temporary PostgreSQL 14 service.
+
+## Application connection
+
+The browser calls relative `/api` endpoints. `tools/serve.mjs` serves the static frontend and routes API requests to `server/api.js`. `server/pos-service.js` translates database rows into the existing POS view model and performs server-side mutations.
+
+The connection string exists only in the Node process. Start persistent mode with:
+
+```powershell
+$env:DATABASE_URL='postgresql://postgres:your-password@127.0.0.1:5432/urban_clothing'
+npm start
+```
+
+If `DATABASE_URL` is missing, the API responds as unavailable and the browser uses its seeded in-memory fallback. This provides an offline demonstration path without weakening the persistent implementation.

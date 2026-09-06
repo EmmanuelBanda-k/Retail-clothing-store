@@ -2,6 +2,9 @@ import { createReadStream } from 'node:fs';
 import { stat } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import { extname, join, normalize } from 'node:path';
+import { createApiHandler } from '../server/api.js';
+import { createDatabase } from '../server/database.js';
+import { createPosService } from '../server/pos-service.js';
 
 const root = normalize(new URL('../', import.meta.url).pathname.replace(/^\/(.:)/, '$1'));
 const port = Number(process.env.PORT || 8765);
@@ -11,8 +14,19 @@ const mimeTypes = {
   '.js': 'text/javascript; charset=utf-8'
 };
 
+const database = process.env.DATABASE_URL ? createDatabase(process.env.DATABASE_URL) : null;
+const api = database ? createApiHandler(createPosService(database)) : null;
+
 const server = createServer(async (request, response) => {
   const requestedPath = decodeURIComponent(new URL(request.url, `http://${request.headers.host}`).pathname);
+  if (requestedPath.startsWith('/api/')) {
+    if (!api) {
+      response.writeHead(503, { 'Content-Type': 'application/json; charset=utf-8' });
+      response.end(JSON.stringify({ error: 'Database mode is not configured' }));
+      return;
+    }
+    return api(request, response, new URL(request.url, `http://${request.headers.host}`));
+  }
   const relativePath = requestedPath === '/' ? 'index.html' : requestedPath.slice(1);
   const filePath = normalize(join(root, relativePath));
 
@@ -46,4 +60,13 @@ server.on('error', error => {
 
 server.listen(port, '127.0.0.1', () => {
   console.log(`Urban Clothing POS: http://127.0.0.1:${port}`);
+  console.log(database ? 'Persistence: PostgreSQL' : 'Persistence: in-memory demonstration fallback');
 });
+
+async function shutdown() {
+  server.close();
+  if (database) await database.close();
+}
+
+process.on('SIGINT', shutdown);
+process.on('SIGTERM', shutdown);

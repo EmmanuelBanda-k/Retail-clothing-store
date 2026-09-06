@@ -43,6 +43,8 @@ The current application is an architectural prototype. The following sprints tur
 
 ## Sprint 3: Persistent application workflows
 
+**Status:** Implemented with a Node API and an automatic offline fallback.
+
 **Goal:** Make the current screens read and write persistent data.
 
 - Load catalogue and inventory through the Node API backed by PostgreSQL.

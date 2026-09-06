@@ -14,7 +14,7 @@ This project was developed for the Group 2 class project.
 
 ## Current status
 
-The application is suitable for a classroom demonstration. The PostgreSQL schema, migrations, seed catalogue, transaction functions, and database tests are implemented. The browser UI still uses its in-memory adapter until Sprint 3 connects it through a Node API.
+The application supports PostgreSQL persistence through its Node API and automatically retains an in-memory fallback for an offline classroom demonstration.
 
 ## Requirements
 
@@ -39,6 +39,15 @@ $env:PORT=8766; npm start
 ```
 
 Do not open `index.html` directly from the filesystem. The application uses JavaScript modules, which browsers expect to load through a local web server.
+
+When `DATABASE_URL` is absent, the server starts in offline demonstration mode. To use persistent mode, configure the database first and start the same command with `DATABASE_URL` set:
+
+```powershell
+$env:DATABASE_URL='postgresql://postgres:your-password@127.0.0.1:5432/urban_clothing'
+npm start
+```
+
+The terminal prints either `Persistence: PostgreSQL` or `Persistence: in-memory demonstration fallback` so the presenter can confirm the active mode.
 
 ## Demo accounts
 
@@ -71,7 +80,7 @@ npm run db:test
 
 `db:setup` applies the versioned migrations and loads `database/seed.sql`. Run it against a new local database. The initial migration creates project objects but does not erase an existing database.
 
-The database enables Row Level Security by default. Sprint 4 will create a restricted application role and operation-specific policies after authentication is connected. Never commit a database password or connection string.
+The Node server owns the PostgreSQL connection; browser code never receives database credentials. Sprint 4 will add signed sessions and database-enforced role policies. Never commit a database password or connection string.
 
 See [Database design](docs/database.md) for the model and transaction behaviour.
 
@@ -93,6 +102,8 @@ Avoid refreshing during the demonstration because the current in-memory dataset 
 ├── css/styles.css             Application styling
 ├── js/app.js                  UI rendering and event handling
 ├── js/core.js                 Testable business rules
+├── js/api.js                  Browser-to-server data adapter
+├── server/                    PostgreSQL API and persistence services
 ├── test/core.test.js          Unit tests
 ├── database/                  PostgreSQL migrations, seed, and SQL tests
 ├── .github/workflows/test.yml Continuous integration
@@ -106,8 +117,9 @@ Avoid refreshing during the demonstration because the current in-memory dataset 
 - Data resets after a refresh.
 - Usernames and PINs are hard-coded for demonstration purposes.
 - Payment choices do not contact real payment providers.
-- The UI is not connected to the database yet, so browser data still resets after refresh.
-- Database access policies and production backup configuration remain future work.
+- Offline demonstration mode resets after refresh; PostgreSQL mode persists.
+- Login verification is server-side, but signed sessions and request authentication remain Sprint 4 work.
+- Production backup configuration remains future work.
 - Customer accounts, exchanges, discounts, barcode devices, and supplier orders remain outside the current prototype.
 
 See [ROADMAP.md](ROADMAP.md) for the database, security, testing, and deployment plan.

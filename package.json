@@ -7,11 +7,15 @@
   "scripts": {
     "start": "node tools/serve.mjs",
     "test": "node --test",
-    "check": "node --check js/core.js && node --check js/app.js",
+    "test:integration": "node --test test/api.integration.test.js",
+    "check": "node --check js/core.js && node --check js/api.js && node --check js/app.js && node --check server/api.js && node --check server/database.js && node --check server/pos-service.js && node --check tools/serve.mjs",
     "db:setup": "node tools/database.mjs setup",
     "db:test": "node tools/database.mjs test"
   },
   "engines": {
     "node": ">=20"
+  },
+  "dependencies": {
+    "pg": "^8.23.0"
   }
 }
