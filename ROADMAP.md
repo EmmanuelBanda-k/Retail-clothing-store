@@ -29,6 +29,8 @@ The current application is an architectural prototype. The following sprints tur
 
 ## Sprint 2: PostgreSQL schema and sample data
 
+**Status:** Implemented in the repository. Remote deployment remains pending until a Supabase project is created and linked.
+
 **Goal:** Replace the in-memory data model with a reproducible Supabase database.
 
 - Create tables for profiles, products, product variants, sales, sale items, refunds, and stock movements.

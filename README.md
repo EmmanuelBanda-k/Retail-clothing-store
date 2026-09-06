@@ -14,12 +14,13 @@ This project was developed for the Group 2 class project.
 
 ## Current status
 
-The application is suitable for a classroom demonstration. Its data currently remains in browser memory and resets whenever the page reloads. Database persistence and secure authentication are planned in later sprints.
+The application is suitable for a classroom demonstration. The PostgreSQL schema, migrations, seed catalogue, transaction functions, and database tests are implemented. The browser UI still uses its in-memory adapter until Sprint 3 connects it to Supabase.
 
 ## Requirements
 
 - Node.js 20 or newer
 - A modern web browser
+- Docker Desktop or another Docker-compatible runtime for local database development
 
 No third-party packages are required for the current prototype.
 
@@ -58,6 +59,22 @@ npm test
 
 The tests cover VAT calculations, stock totals, reorder thresholds, permissions, sale completion, insufficient stock, and refund reversal. GitHub Actions runs the same checks on pushes and pull requests.
 
+## Database development
+
+The `supabase` directory contains the complete database definition. Install Docker Desktop, then run:
+
+```bash
+npx supabase start
+npx supabase db reset
+npx supabase test db
+```
+
+`db reset` recreates the local database from the versioned migrations and loads `supabase/seed.sql`. Use it only with a local or disposable development environment.
+
+The database currently denies browser roles access by default. Sprint 4 will add operation-specific Row Level Security policies after authentication is connected. Never commit a Supabase secret or service-role key.
+
+See [Database design](docs/database.md) for the model and transaction behaviour.
+
 ## Suggested demonstration
 
 1. Sign in as the cashier and complete a sale.
@@ -77,6 +94,7 @@ Avoid refreshing during the demonstration because the current in-memory dataset 
 ├── js/app.js                  UI rendering and event handling
 ├── js/core.js                 Testable business rules
 ├── test/core.test.js          Unit tests
+├── supabase/                  Database migrations, seed, and pgTAP tests
 ├── .github/workflows/test.yml Continuous integration
 ├── tools/serve.mjs            Dependency-free development server
 ├── ROADMAP.md                 Delivery sprints
@@ -88,7 +106,8 @@ Avoid refreshing during the demonstration because the current in-memory dataset 
 - Data resets after a refresh.
 - Usernames and PINs are hard-coded for demonstration purposes.
 - Payment choices do not contact real payment providers.
-- There is no database, backup, audit service, or multi-branch synchronisation yet.
+- The UI is not connected to the database yet, so browser data still resets after refresh.
+- Database access policies and production backup configuration remain future work.
 - Customer accounts, exchanges, discounts, barcode devices, and supplier orders remain outside the current prototype.
 
 See [ROADMAP.md](ROADMAP.md) for the database, security, testing, and deployment plan.
