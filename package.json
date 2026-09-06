@@ -1,0 +1,15 @@
+{
+  "name": "urban-clothing-pos",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Retail clothing store point-of-sale architectural prototype",
+  "scripts": {
+    "start": "node tools/serve.mjs",
+    "test": "node --test",
+    "check": "node --check js/core.js && node --check js/app.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

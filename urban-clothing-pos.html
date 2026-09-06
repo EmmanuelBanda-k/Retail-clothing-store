@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Urban Clothing | Store Management System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Archivo+Narrow:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#E9EBEE;
+  --surface:#FFFFFF;
+  --ink:#16202B;
+  --ink-soft:#5B6875;
+  --line:#CFD5DC;
+  --line-soft:#E4E8EC;
+  --denim:#2E4C86;
+  --denim-dark:#223A67;
+  --clay:#A8461C;
+  --leaf:#1F6B4C;
+  --radius:3px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--paper);
+  color:var(--ink);
+  font-family:'Archivo','Helvetica Neue',Helvetica,Arial,sans-serif;
+  font-size:15px;
+  line-height:1.45;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3{margin:0;font-weight:600;letter-spacing:-0.015em}
+table{border-collapse:collapse;width:100%}
+button{font-family:inherit;font-size:14px;cursor:pointer}
+input,select{font-family:inherit;font-size:14px}
+:focus-visible{outline:2px solid var(--denim);outline-offset:2px}
+.num{font-variant-numeric:tabular-nums}
+
+/* ---------- buttons ---------- */
+.btn{
+  border:1px solid var(--denim);background:var(--denim);color:#fff;
+  padding:8px 14px;border-radius:var(--radius);font-weight:500;
+}
+.btn:hover{background:var(--denim-dark);border-color:var(--denim-dark)}
+.btn.ghost{background:transparent;color:var(--denim)}
+.btn.ghost:hover{background:#E8EDF6}
+.btn.quiet{background:transparent;border-color:var(--line);color:var(--ink-soft)}
+.btn.quiet:hover{background:#F1F3F5;color:var(--ink)}
+.btn.danger{background:transparent;border-color:#D8B3A4;color:var(--clay)}
+.btn.danger:hover{background:#FBF0EA}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn.wide{width:100%;padding:11px;font-size:15px}
+
+/* ---------- sign in ---------- */
+#login{min-height:100vh;display:grid;place-items:center;padding:24px}
+.login-box{width:100%;max-width:400px}
+.brand-mark{
+  font-family:'Archivo Narrow','Archivo',sans-serif;
+  font-size:13px;letter-spacing:.14em;color:var(--ink-soft);
+  text-transform:uppercase;margin-bottom:6px;
+}
+.login-box h1{font-size:34px;line-height:1.05;margin-bottom:8px}
+.login-sub{color:var(--ink-soft);font-size:14px;margin:0 0 26px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius)}
+.login-panel{padding:22px}
+label.field{display:block;margin-bottom:14px}
+label.field span{display:block;font-size:13px;color:var(--ink-soft);margin-bottom:5px}
+input[type=text],input[type=password],input[type=number],select{
+  width:100%;padding:9px 10px;border:1px solid var(--line);
+  border-radius:var(--radius);background:#fff;color:var(--ink);
+}
+input:focus,select:focus{border-color:var(--denim);outline:none;box-shadow:0 0 0 2px #DEE6F4}
+.accounts{margin-top:20px;border-top:1px solid var(--line-soft);padding-top:14px}
+.accounts p{font-size:13px;color:var(--ink-soft);margin:0 0 10px}
+.acct{
+  display:flex;justify-content:space-between;align-items:center;width:100%;
+  background:transparent;border:0;border-bottom:1px solid var(--line-soft);
+  padding:9px 2px;text-align:left;color:var(--ink);
+}
+.acct:last-child{border-bottom:0}
+.acct:hover{background:#F3F5F8}
+.acct em{font-style:normal;color:var(--ink-soft);font-size:13px}
+.err{color:var(--clay);font-size:13px;margin:0 0 12px;display:none}
+
+/* ---------- shell ---------- */
+#app{display:none;min-height:100vh;flex-direction:column}
+.topbar{
+  background:var(--ink);color:#fff;display:flex;align-items:center;
+  justify-content:space-between;padding:0 18px;height:54px;
+}
+.topbar .store{display:flex;align-items:baseline;gap:10px}
+.topbar .store strong{font-size:16px;font-weight:600}
+.topbar .store span{font-size:12.5px;color:#9BA8B6}
+.who{display:flex;align-items:center;gap:12px;font-size:13px;color:#C3CCD6}
+.who b{color:#fff;font-weight:500}
+.role-tag{
+  border:1px solid #3C4B5C;padding:2px 7px;border-radius:var(--radius);
+  font-size:11.5px;letter-spacing:.05em;color:#B9C6D4;
+}
+.signout{background:none;border:0;color:#9BA8B6;font-size:13px;padding:4px}
+.signout:hover{color:#fff;text-decoration:underline}
+
+.body{display:flex;flex:1;min-height:0}
+nav{
+  width:198px;flex:none;background:#F5F6F8;border-right:1px solid var(--line);
+  padding:14px 0;display:flex;flex-direction:column;
+}
+nav button{
+  display:block;width:100%;text-align:left;background:none;border:0;
+  border-left:3px solid transparent;padding:9px 16px;color:var(--ink-soft);font-size:14.5px;
+}
+nav button:hover{color:var(--ink);background:#ECEEF1}
+nav button.on{color:var(--ink);border-left-color:var(--denim);background:#E7EBF3;font-weight:500}
+.nav-note{margin-top:auto;padding:14px 16px 0;font-size:11.5px;color:#8B96A2;line-height:1.5;border-top:1px solid var(--line-soft)}
+main{flex:1;padding:22px 26px 60px;overflow-x:auto}
+.view-head{margin-bottom:18px}
+.view-head h2{font-size:22px}
+.view-head p{margin:3px 0 0;color:var(--ink-soft);font-size:14px}
+
+/* ---------- stat strip ---------- */
+.strip{display:flex;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);margin-bottom:20px}
+.strip div{flex:1;padding:14px 18px;border-right:1px solid var(--line-soft)}
+.strip div:last-child{border-right:0}
+.strip .k{font-size:12.5px;color:var(--ink-soft);margin-bottom:4px}
+.strip .v{font-size:24px;font-weight:600;letter-spacing:-0.02em}
+.strip .v.warn{color:var(--clay)}
+
+.grid2{display:grid;grid-template-columns:1.25fr 1fr;gap:18px;align-items:start}
+.block{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius)}
+.block h3{font-size:14px;padding:12px 16px;border-bottom:1px solid var(--line-soft);font-weight:600}
+.block .pad{padding:16px}
+
+/* ---------- tables ---------- */
+th{
+  font-family:'Archivo Narrow','Archivo',sans-serif;font-size:12.5px;font-weight:600;
+  color:var(--ink-soft);text-align:left;padding:9px 16px;border-bottom:1px solid var(--line);
+  letter-spacing:.03em;white-space:nowrap;
+}
+td{padding:10px 16px;border-bottom:1px solid var(--line-soft);font-size:14px;vertical-align:middle}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:#F7F8FA}
+.r{text-align:right}
+.muted{color:var(--ink-soft)}
+.empty{padding:26px 16px;color:var(--ink-soft);font-size:14px}
+
+.pill{font-size:12px;padding:2px 7px;border-radius:var(--radius);border:1px solid}
+.ok{color:var(--leaf);border-color:#B6D6C6;background:#EEF6F2}
+.low{color:var(--clay);border-color:#E0BDAC;background:#FBF1EC}
+.out{color:#6C7681;border-color:var(--line);background:#F2F4F6}
+.void{color:#6C7681;border-color:var(--line);background:#F2F4F6}
+
+/* ---------- till ---------- */
+.till{display:grid;grid-template-columns:1fr 340px;gap:18px;align-items:start}
+.searchrow{padding:12px 16px;border-bottom:1px solid var(--line-soft);display:flex;gap:10px}
+.searchrow input{flex:1}
+.searchrow select{width:150px}
+.item{padding:12px 16px;border-bottom:1px solid var(--line-soft);display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.item:last-child{border-bottom:0}
+.item h4{margin:0 0 2px;font-size:14.5px;font-weight:600}
+.item .meta{font-size:12.5px;color:var(--ink-soft)}
+.item .price{font-weight:600;white-space:nowrap}
+.sizes{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.size{
+  border:1px solid var(--line);background:#fff;color:var(--ink);
+  border-radius:var(--radius);padding:4px 9px;font-size:13px;min-width:44px;
+}
+.size:hover:not(:disabled){border-color:var(--denim);color:var(--denim)}
+.size b{font-weight:600}
+.size small{display:block;font-size:10.5px;color:var(--ink-soft);line-height:1.2}
+.size:disabled{background:#F2F4F6;color:#A8B1BB}
+
+.cart-line{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--line-soft)}
+.cart-line .nm{font-size:13.5px}
+.cart-line .sub{font-size:12px;color:var(--ink-soft)}
+.qty{display:flex;align-items:center;gap:6px;margin-top:5px}
+.qty button{width:22px;height:22px;border:1px solid var(--line);background:#fff;border-radius:var(--radius);line-height:1;color:var(--ink)}
+.qty button:hover{border-color:var(--denim);color:var(--denim)}
+.qty span{font-size:13px;min-width:16px;text-align:center}
+.rm{background:none;border:0;color:var(--ink-soft);font-size:12px;padding:0;text-decoration:underline}
+.rm:hover{color:var(--clay)}
+.totals{border-top:1px solid var(--line);margin-top:14px;padding-top:12px}
+.totals div{display:flex;justify-content:space-between;font-size:13.5px;color:var(--ink-soft);margin-bottom:6px}
+.totals .grand{font-size:19px;font-weight:600;color:var(--ink);margin:10px 0 14px}
+
+/* ---------- receipt ---------- */
+.receipt{font-family:'Archivo Narrow','Archivo',sans-serif;font-size:13px;line-height:1.6}
+.receipt .rline{display:flex;justify-content:space-between}
+.receipt hr{border:0;border-top:1px dashed var(--line);margin:10px 0}
+
+/* ---------- chart ---------- */
+.chart{display:flex;align-items:flex-end;gap:10px;height:150px;padding:0 4px}
+.bar{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%}
+.bar i{display:block;width:100%;background:var(--denim);border-radius:2px 2px 0 0;min-height:2px}
+.bar i.today{background:var(--clay)}
+.bar label{font-size:11.5px;color:var(--ink-soft);margin-top:6px}
+.bar .amt{font-size:11px;color:var(--ink-soft);margin-bottom:4px}
+
+.toast{
+  position:fixed;left:50%;bottom:26px;transform:translateX(-50%);
+  background:var(--ink);color:#fff;padding:10px 18px;border-radius:var(--radius);
+  font-size:14px;opacity:0;pointer-events:none;transition:opacity .18s;z-index:50;
+}
+.toast.show{opacity:1}
+
+.usecase{display:flex;gap:12px;padding:11px 16px;border-bottom:1px solid var(--line-soft);font-size:14px}
+.usecase:last-child{border-bottom:0}
+.usecase .id{font-family:'Archivo Narrow',sans-serif;color:var(--ink-soft);width:44px;flex:none}
+.usecase .nm{flex:1}
+.layer{padding:12px 16px;border-bottom:1px solid var(--line-soft)}
+.layer:last-child{border-bottom:0}
+.layer b{display:block;font-size:14px;margin-bottom:2px}
+.layer span{font-size:13px;color:var(--ink-soft)}
+
+.inline-form{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;padding:14px 16px;border-bottom:1px solid var(--line-soft);background:#F7F8FA}
+.inline-form label{font-size:12.5px;color:var(--ink-soft)}
+.inline-form label span{display:block;margin-bottom:4px}
+.inline-form input,.inline-form select{width:130px}
+
+@media (max-width:900px){
+  .grid2,.till{grid-template-columns:1fr}
+  .strip{flex-wrap:wrap}
+  .strip div{min-width:50%;border-bottom:1px solid var(--line-soft)}
+  .body{flex-direction:column}
+  nav{width:100%;flex-direction:row;overflow-x:auto;padding:0;border-right:0;border-bottom:1px solid var(--line)}
+  nav button{width:auto;white-space:nowrap;border-left:0;border-bottom:3px solid transparent;padding:11px 14px}
+  nav button.on{border-left:0;border-bottom-color:var(--denim)}
+  .nav-note{display:none}
+  main{padding:16px 14px 50px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<!-- ============ SIGN IN ============ -->
+<section id="login">
+  <div class="login-box">
+    <div class="brand-mark">Lusaka branch</div>
+    <h1>Urban Clothing</h1>
+    <p class="login-sub">Store management system. Sign in to continue.</p>
+    <div class="panel login-panel">
+      <p class="err" id="loginErr">Wrong username or PIN. Try again.</p>
+      <label class="field"><span>Username</span><input type="text" id="u" autocomplete="off"></label>
+      <label class="field"><span>PIN</span><input type="password" id="p" autocomplete="off"></label>
+      <button class="btn wide" id="signin">Sign in</button>
+      <div class="accounts">
+        <p>Demo accounts, tap one to fill the form.</p>
+        <button class="acct" data-u="nkosinathi" data-p="1234"><span>nkosinathi</span><em>Store owner</em></button>
+        <button class="acct" data-u="vernon" data-p="1234"><span>vernon</span><em>Cashier</em></button>
+        <button class="acct" data-u="emmanuel" data-p="1234"><span>emmanuel</span><em>Inventory manager</em></button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ APP ============ -->
+<div id="app">
+  <header class="topbar">
+    <div class="store"><strong>Urban Clothing</strong><span>Lusaka branch</span></div>
+    <div class="who">
+      <span class="role-tag" id="roleTag"></span>
+      <b id="userName"></b>
+      <button class="signout" id="signout">Sign out</button>
+    </div>
+  </header>
+  <div class="body">
+    <nav id="nav"></nav>
+    <main id="main"></main>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* =========================================================
+   Retail Clothing Store Management System
+   Architectural proof of concept, Elaboration iteration 1
+   Layers: presentation (render*), logic (services), data (db)
+   ========================================================= */
+
+/* ---------- DATA LAYER ---------- */
+const SIZES = ['S','M','L','XL'];
+let db, ui;
+
+function seed(){
+  const p = (id,sku,name,cat,brand,price,cost,stock)=>({id,sku,name,cat,brand,price,cost,stock});
+  db = {
+    users:[
+      {u:'nkosinathi', pin:'1234', name:'Shumba.D. Nkosinathi', first:'Nkosinathi', role:'owner'},
+      {u:'vernon',     pin:'1234', name:'Vernon Longwani',      first:'Vernon',     role:'cashier'},
+      {u:'emmanuel',   pin:'1234', name:'Emmanuel Banda',       first:'Emmanuel',   role:'inventory'}
+    ],
+    products:[
+      p(1,'URB-1001','Oxford shirt, long sleeve','Men','Kaunda Tailors',480,300,{S:6,M:9,L:4,XL:2}),
+      p(2,'URB-1002','Straight leg denim jeans','Men','Blue Ridge',750,470,{S:3,M:7,L:6,XL:5}),
+      p(3,'URB-1003','Cotton crew neck tee','Men','Urban Basics',250,130,{S:14,M:18,L:11,XL:7}),
+      p(4,'URB-2001','Chitenge wrap skirt','Women','Kabwata Prints',420,240,{S:5,M:8,L:6,XL:3}),
+      p(5,'URB-2002','Fitted blouse, short sleeve','Women','Zani Couture',390,220,{S:2,M:4,L:2,XL:1}),
+      p(6,'URB-2003','A line midi dress','Women','Zani Couture',890,550,{S:3,M:5,L:4,XL:2}),
+      p(7,'URB-3001','School polo shirt','Kids','Urban Basics',190,95,{S:22,M:19,L:12,XL:0}),
+      p(8,'URB-3002','Kids denim shorts','Kids','Blue Ridge',280,160,{S:9,M:6,L:1,XL:0}),
+      p(9,'URB-4001','Quilted winter jacket','Outerwear','Blue Ridge',1250,820,{S:2,M:3,L:2,XL:1}),
+      p(10,'URB-4002','Knitted pullover','Outerwear','Kaunda Tailors',660,400,{S:4,M:6,L:5,XL:3})
+    ],
+    sales:[],
+    nextSale:1041,
+    nextProduct:11
+  };
+  seedHistory();
+}
+
+/* prior week of trading, so reports and the chart have something to read */
+function seedHistory(){
+  const pattern=[[3,4],[5,2],[2,6],[6,3],[4,5],[7,4]];
+  for(let d=6; d>=1; d--){
+    const n = 2 + (d % 3);
+    for(let s=0; s<n; s++){
+      const items=[];
+      const picks = pattern[(d+s)%pattern.length];
+      picks.forEach(idx=>{
+        const pr = db.products[(idx+s)%db.products.length];
+        const size = SIZES[(d+s)%4];
+        const qty = 1 + ((d+s)%2);
+        items.push({sku:pr.sku,name:pr.name,size,qty,price:pr.price});
+      });
+      const when = new Date(); when.setDate(when.getDate()-d);
+      when.setHours(9+((d+s)%8), (s*13)%60, 0, 0);
+      commitSale(items, s%2 ? 'Mobile money' : 'Cash', 'Vernon Longwani', when, true);
+    }
+  }
+}
+
+/* ---------- LOGIC LAYER ---------- */
+const VAT = 0.16;
+
+function findProduct(sku){ return db.products.find(p=>p.sku===sku); }
+function stockOf(sku,size){ const p=findProduct(sku); return p?p.stock[size]:0; }
+function totalStock(p){ return SIZES.reduce((t,s)=>t+p.stock[s],0); }
+function stockValue(){ return db.products.reduce((t,p)=>t+totalStock(p)*p.cost,0); }
+function lowStock(){ return db.products.filter(p=>totalStock(p)<=8); }
+
+function cartTotals(lines){
+  const gross = lines.reduce((t,l)=>t+l.price*l.qty,0);
+  const net = Math.round(gross/(1+VAT));
+  return {gross, net, vat:gross-net};
+}
+
+function commitSale(items, method, cashier, when, silent){
+  // deduct stock, then record. Sale is rejected if any line is short.
+  for(const it of items){
+    if(stockOf(it.sku,it.size) < it.qty) return {ok:false, msg:'Not enough stock for '+it.name};
+  }
+  items.forEach(it=>{ findProduct(it.sku).stock[it.size] -= it.qty; });
+  const t = cartTotals(items);
+  const sale = {
+    id:'S'+(db.nextSale++), at:(when||new Date()).toISOString(),
+    cashier, method, items:JSON.parse(JSON.stringify(items)),
+    total:t.gross, vat:t.vat, status:'completed'
+  };
+  db.sales.push(sale);
+  if(!silent) toast('Sale '+sale.id+' recorded');
+  return {ok:true, sale};
+}
+
+function refundSale(id){
+  const s = db.sales.find(x=>x.id===id);
+  if(!s || s.status==='refunded') return;
+  s.items.forEach(it=>{ const p=findProduct(it.sku); if(p) p.stock[it.size]+=it.qty; });
+  s.status='refunded';
+  s.refundedAt=new Date().toISOString();
+  toast('Sale '+id+' refunded, stock returned');
+}
+
+function sameDay(iso,d){ const x=new Date(iso); return x.toDateString()===d.toDateString(); }
+function activeSales(){ return db.sales.filter(s=>s.status==='completed'); }
+function todaySales(){ const now=new Date(); return activeSales().filter(s=>sameDay(s.at,now)); }
+
+function last7(){
+  const out=[];
+  for(let i=6;i>=0;i--){
+    const d=new Date(); d.setDate(d.getDate()-i);
+    const tot=activeSales().filter(s=>sameDay(s.at,d)).reduce((t,s)=>t+s.total,0);
+    out.push({d, total:tot, today:i===0});
+  }
+  return out;
+}
+
+function topSellers(){
+  const map={};
+  activeSales().forEach(s=>s.items.forEach(it=>{
+    map[it.sku] = map[it.sku] || {name:it.name, units:0, revenue:0};
+    map[it.sku].units += it.qty;
+    map[it.sku].revenue += it.qty*it.price;
+  }));
+  return Object.values(map).sort((a,b)=>b.revenue-a.revenue);
+}
+
+function byCategory(){
+  const map={};
+  activeSales().forEach(s=>s.items.forEach(it=>{
+    const p=findProduct(it.sku); const c=p?p.cat:'Other';
+    map[c]=(map[c]||0)+it.qty*it.price;
+  }));
+  return Object.entries(map).sort((a,b)=>b[1]-a[1]);
+}
+
+const PERMS = {
+  owner:     ['dash','till','stock','reports','sales','project'],
+  cashier:   ['dash','till','sales','project'],
+  inventory: ['dash','stock','reports','project']
+};
+function can(view){ return PERMS[ui.user.role].includes(view); }
+
+/* ---------- HELPERS ---------- */
+const $ = s=>document.querySelector(s);
+const money = n=>'K'+Math.round(n).toLocaleString('en-US');
+const esc = s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const dayName = d=>['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()];
+const clock = iso=>new Date(iso).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+const dateShort = iso=>{const d=new Date(iso);return d.getDate()+' '+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()];};
+
+let toastTimer;
+function toast(msg){
+  const t=$('#toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),2600);
+}
+
+/* ---------- PRESENTATION: SIGN IN ---------- */
+document.querySelectorAll('.acct').forEach(b=>{
+  b.onclick=()=>{ $('#u').value=b.dataset.u; $('#p').value=b.dataset.p; $('#p').focus(); };
+});
+$('#signin').onclick = attemptLogin;
+$('#p').addEventListener('keydown', e=>{ if(e.key==='Enter') attemptLogin(); });
+$('#u').addEventListener('keydown', e=>{ if(e.key==='Enter') $('#p').focus(); });
+
+function attemptLogin(){
+  const u=$('#u').value.trim().toLowerCase(), p=$('#p').value.trim();
+  const found = db.users.find(x=>x.u===u && x.pin===p);
+  if(!found){ $('#loginErr').style.display='block'; return; }
+  $('#loginErr').style.display='none';
+  ui = {user:found, view:'dash', cart:[], search:'', cat:'All', lastReceipt:null};
+  $('#login').style.display='none';
+  $('#app').style.display='flex';
+  $('#userName').textContent=found.name;
+  $('#roleTag').textContent={owner:'Owner',cashier:'Cashier',inventory:'Inventory'}[found.role];
+  render();
+}
+$('#signout').onclick=()=>{
+  $('#app').style.display='none'; $('#login').style.display='grid';
+  $('#u').value=''; $('#p').value=''; ui=null;
+};
+
+/* ---------- PRESENTATION: SHELL ---------- */
+const VIEWS = [
+  ['dash','Dashboard'],['till','Point of sale'],['stock','Inventory'],
+  ['reports','Reports'],['sales','Sales history'],['project','Project scope']
+];
+
+function render(){
+  if(!can(ui.view)) ui.view = PERMS[ui.user.role][0];
+  $('#nav').innerHTML = VIEWS.filter(v=>can(v[0]))
+    .map(([id,label])=>`<button class="${ui.view===id?'on':''}" data-v="${id}">${label}</button>`).join('')
+    + `<div class="nav-note">Proof of concept. Data is held in memory and resets when the page reloads.</div>`;
+  $('#nav').querySelectorAll('button').forEach(b=>b.onclick=()=>{ ui.view=b.dataset.v; render(); });
+  ({dash:viewDash, till:viewTill, stock:viewStock, reports:viewReports, sales:viewSales, project:viewProject})[ui.view]();
+}
+
+/* ---------- VIEW: DASHBOARD ---------- */
+function viewDash(){
+  const t = todaySales();
+  const revenue = t.reduce((a,s)=>a+s.total,0);
+  const units = t.reduce((a,s)=>a+s.items.reduce((x,i)=>x+i.qty,0),0);
+  const low = lowStock();
+  const bars = last7();
+  const peak = Math.max(...bars.map(b=>b.total),1);
+  const recent = activeSales().slice(-6).reverse();
+
+  $('#main').innerHTML = `
+  <div class="view-head">
+    <h2>Good day, ${esc(ui.user.first)}</h2>
+    <p>${new Date().toLocaleDateString('en-GB',{weekday:'long', day:'numeric', month:'long', year:'numeric'})}</p>
+  </div>
+  <div class="strip">
+    <div><div class="k">Takings today</div><div class="v num">${money(revenue)}</div></div>
+    <div><div class="k">Items sold today</div><div class="v num">${units}</div></div>
+    <div><div class="k">Lines running low</div><div class="v num ${low.length?'warn':''}">${low.length}</div></div>
+    <div><div class="k">Stock at cost</div><div class="v num">${money(stockValue())}</div></div>
+  </div>
+  <div class="grid2">
+    <div class="block">
+      <h3>Takings, last seven days</h3>
+      <div class="pad">
+        <div class="chart">
+          ${bars.map(b=>`
+            <div class="bar" title="${money(b.total)}">
+              <div class="amt num">${b.total ? (b.total>=10000 ? Math.round(b.total/1000)+'k' : (Math.round(b.total/100)/10)+'k') : ''}</div>
+              <i class="${b.today?'today':''}" style="height:${Math.max(2,(b.total/peak)*100)}%"></i>
+              <label>${dayName(b.d)}</label>
+            </div>`).join('')}
+        </div>
+      </div>
+    </div>
+    <div class="block">
+      <h3>Reorder before the weekend</h3>
+      ${low.length ? `<table><tbody>${low.slice(0,6).map(p=>`
+        <tr><td>${esc(p.name)}<div class="muted" style="font-size:12.5px">${p.sku}</div></td>
+        <td class="r num">${totalStock(p)} left</td></tr>`).join('')}</tbody></table>`
+      : `<div class="empty">Every line is above the reorder level.</div>`}
+    </div>
+  </div>
+  <div class="block" style="margin-top:18px">
+    <h3>Recent sales</h3>
+    ${recent.length?`<table>
+      <thead><tr><th>Sale</th><th>Time</th><th>Served by</th><th>Payment</th><th class="r">Total</th></tr></thead>
+      <tbody>${recent.map(s=>`<tr>
+        <td class="num">${s.id}</td><td class="num">${dateShort(s.at)}, ${clock(s.at)}</td>
+        <td>${esc(s.cashier)}</td><td>${esc(s.method)}</td>
+        <td class="r num">${money(s.total)}</td></tr>`).join('')}</tbody></table>`
+      :`<div class="empty">No sales recorded yet.</div>`}
+  </div>`;
+}
+
+/* ---------- VIEW: POINT OF SALE ---------- */
+function viewTill(){
+  const cats = ['All', ...new Set(db.products.map(p=>p.cat))];
+  const q = ui.search.toLowerCase();
+  const list = db.products.filter(p=>
+    (ui.cat==='All'||p.cat===ui.cat) &&
+    (p.name.toLowerCase().includes(q)||p.brand.toLowerCase().includes(q)||p.sku.toLowerCase().includes(q))
+  );
+  const t = cartTotals(ui.cart);
+
+  $('#main').innerHTML = `
+  <div class="view-head"><h2>Point of sale</h2><p>Pick a size to add the item to the sale.</p></div>
+  <div class="till">
+    <div class="block">
+      <div class="searchrow">
+        <input type="text" id="q" placeholder="Search by name, brand or code" value="${esc(ui.search)}">
+        <select id="cat">${cats.map(c=>`<option ${c===ui.cat?'selected':''}>${c}</option>`).join('')}</select>
+      </div>
+      ${list.length ? list.map(p=>`
+        <div class="item">
+          <div>
+            <h4>${esc(p.name)}</h4>
+            <div class="meta">${esc(p.brand)} &nbsp;/&nbsp; ${p.sku} &nbsp;/&nbsp; ${p.cat}</div>
+            <div class="sizes">
+              ${SIZES.map(s=>{
+                const inCart = ui.cart.filter(l=>l.sku===p.sku&&l.size===s).reduce((a,l)=>a+l.qty,0);
+                const left = p.stock[s]-inCart;
+                return `<button class="size" data-sku="${p.sku}" data-size="${s}" ${left<=0?'disabled':''}>
+                  <b>${s}</b><small>${left>0?left+' left':'none'}</small></button>`;
+              }).join('')}
+            </div>
+          </div>
+          <div class="price num">${money(p.price)}</div>
+        </div>`).join('')
+      : `<div class="empty">Nothing matches that search.</div>`}
+    </div>
+
+    <div class="block">
+      <h3>Current sale</h3>
+      <div class="pad">
+        ${ui.cart.length ? ui.cart.map((l,i)=>`
+          <div class="cart-line">
+            <div>
+              <div class="nm">${esc(l.name)}</div>
+              <div class="sub">Size ${l.size} &nbsp;/&nbsp; ${money(l.price)} each</div>
+              <div class="qty">
+                <button data-dec="${i}" aria-label="Reduce quantity">-</button>
+                <span class="num">${l.qty}</span>
+                <button data-inc="${i}" aria-label="Increase quantity">+</button>
+                <button class="rm" data-rm="${i}">Remove</button>
+              </div>
+            </div>
+            <div class="num" style="font-weight:600">${money(l.price*l.qty)}</div>
+          </div>`).join('')
+        : `<div class="muted" style="padding:14px 0;font-size:13.5px">No items yet. The sale total updates as you add them.</div>`}
+
+        <div class="totals">
+          <div><span>Goods</span><span class="num">${money(t.net)}</span></div>
+          <div><span>VAT at 16 percent</span><span class="num">${money(t.vat)}</span></div>
+          <div class="grand"><span>Total</span><span class="num">${money(t.gross)}</span></div>
+          <label class="field"><span>Payment method</span>
+            <select id="method">
+              <option>Cash</option><option>Mobile money</option><option>Card</option>
+            </select></label>
+          <button class="btn wide" id="pay" ${ui.cart.length?'':'disabled'}>Take payment</button>
+          ${ui.cart.length?`<button class="btn quiet wide" id="clear" style="margin-top:8px">Cancel sale</button>`:''}
+        </div>
+      </div>
+    </div>
+  </div>
+  ${ui.lastReceipt?receiptBlock(ui.lastReceipt):''}`;
+
+  const qEl=$('#q');
+  qEl.oninput=e=>{ ui.search=e.target.value; const pos=e.target.selectionStart; viewTill(); const n=$('#q'); n.focus(); n.setSelectionRange(pos,pos); };
+  $('#cat').onchange=e=>{ ui.cat=e.target.value; viewTill(); };
+
+  document.querySelectorAll('.size').forEach(b=>b.onclick=()=>{
+    const {sku,size}=b.dataset, p=findProduct(sku);
+    const line = ui.cart.find(l=>l.sku===sku&&l.size===size);
+    if(line) line.qty++; else ui.cart.push({sku, name:p.name, size, qty:1, price:p.price});
+    viewTill();
+  });
+  document.querySelectorAll('[data-inc]').forEach(b=>b.onclick=()=>{
+    const l=ui.cart[b.dataset.inc];
+    const inCart=ui.cart.filter(x=>x.sku===l.sku&&x.size===l.size).reduce((a,x)=>a+x.qty,0);
+    if(stockOf(l.sku,l.size)-inCart<=0){ toast('That is all the stock on the shelf'); return; }
+    l.qty++; viewTill();
+  });
+  document.querySelectorAll('[data-dec]').forEach(b=>b.onclick=()=>{
+    const l=ui.cart[b.dataset.dec]; l.qty--; if(l.qty<1) ui.cart.splice(b.dataset.dec,1); viewTill();
+  });
+  document.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{ ui.cart.splice(b.dataset.rm,1); viewTill(); });
+
+  const clearBtn=$('#clear'); if(clearBtn) clearBtn.onclick=()=>{ ui.cart=[]; ui.lastReceipt=null; viewTill(); };
+  $('#pay').onclick=()=>{
+    const res = commitSale(ui.cart, $('#method').value, ui.user.name);
+    if(!res.ok){ toast(res.msg); return; }
+    ui.lastReceipt=res.sale; ui.cart=[]; viewTill();
+    window.scrollTo({top:document.body.scrollHeight, behavior:'smooth'});
+  };
+}
+
+function receiptBlock(s){
+  const t = cartTotals(s.items);
+  return `<div class="block" style="margin-top:18px;max-width:360px">
+    <h3>Receipt ${s.id}</h3>
+    <div class="pad receipt">
+      <div class="rline"><span>Urban Clothing, Lusaka</span><span>${dateShort(s.at)}, ${clock(s.at)}</span></div>
+      <div class="rline"><span>Served by ${esc(s.cashier)}</span><span>${esc(s.method)}</span></div>
+      <hr>
+      ${s.items.map(i=>`<div class="rline"><span>${i.qty} x ${esc(i.name)} (${i.size})</span><span class="num">${money(i.price*i.qty)}</span></div>`).join('')}
+      <hr>
+      <div class="rline"><span>Goods</span><span class="num">${money(t.net)}</span></div>
+      <div class="rline"><span>VAT</span><span class="num">${money(t.vat)}</span></div>
+      <div class="rline" style="font-weight:600;font-size:15px;margin-top:6px"><span>Total</span><span class="num">${money(t.gross)}</span></div>
+      <hr>
+      <div style="color:var(--ink-soft)">Stock levels updated. Returns accepted within 14 days with this receipt.</div>
+    </div>
+  </div>`;
+}
+
+/* ---------- VIEW: INVENTORY ---------- */
+function viewStock(){
+  const rows = db.products.map(p=>{
+    const tot = totalStock(p);
+    const tag = tot===0 ? '<span class="pill out">Out of stock</span>'
+              : tot<=8 ? '<span class="pill low">Reorder</span>'
+              : '<span class="pill ok">Healthy</span>';
+    return `<tr>
+      <td><div style="font-weight:500">${esc(p.name)}</div><div class="muted" style="font-size:12.5px">${p.sku} / ${esc(p.brand)}</div></td>
+      <td>${p.cat}</td>
+      ${SIZES.map(s=>`<td class="r num" style="${p.stock[s]<=2?'color:var(--clay)':''}">${p.stock[s]}</td>`).join('')}
+      <td class="r num" style="font-weight:600">${tot}</td>
+      <td class="r num">${money(p.price)}</td>
+      <td>${tag}</td>
+      <td class="r"><button class="btn quiet" data-restock="${p.sku}">Receive stock</button></td>
+    </tr>`;
+  }).join('');
+
+  $('#main').innerHTML = `
+  <div class="view-head"><h2>Inventory</h2><p>Stock is held per size. Anything at eight units or fewer is flagged for reorder.</p></div>
+  <div class="block">
+    <div class="inline-form">
+      <label><span>Item name</span><input type="text" id="nName" placeholder="Linen shirt"></label>
+      <label><span>Category</span><select id="nCat"><option>Men</option><option>Women</option><option>Kids</option><option>Outerwear</option></select></label>
+      <label><span>Brand</span><input type="text" id="nBrand" placeholder="Zani Couture"></label>
+      <label><span>Cost</span><input type="number" id="nCost" placeholder="240"></label>
+      <label><span>Selling price</span><input type="number" id="nPrice" placeholder="420"></label>
+      <label><span>Units per size</span><input type="number" id="nQty" placeholder="5"></label>
+      <button class="btn" id="addProd">Add item</button>
+    </div>
+    <table>
+      <thead><tr><th>Item</th><th>Category</th>${SIZES.map(s=>`<th class="r">${s}</th>`).join('')}<th class="r">Total</th><th class="r">Price</th><th>Status</th><th></th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>`;
+
+  document.querySelectorAll('[data-restock]').forEach(b=>b.onclick=()=>{
+    const p=findProduct(b.dataset.restock);
+    const size=prompt('Which size are you receiving? S, M, L or XL','M');
+    if(!size||!SIZES.includes(size.toUpperCase())) return;
+    const n=parseInt(prompt('How many units?','10'),10);
+    if(!n||n<1) return;
+    p.stock[size.toUpperCase()]+=n;
+    toast(n+' units of '+p.name+' received');
+    viewStock();
+  });
+
+  $('#addProd').onclick=()=>{
+    const name=$('#nName').value.trim(), brand=$('#nBrand').value.trim()||'Unbranded';
+    const cost=+$('#nCost').value, price=+$('#nPrice').value, qty=+$('#nQty').value;
+    if(!name||!price){ toast('Enter at least a name and a selling price'); return; }
+    const id=db.nextProduct++;
+    const stock={}; SIZES.forEach(s=>stock[s]=qty||0);
+    db.products.push({id, sku:'URB-'+(9000+id), name, cat:$('#nCat').value, brand, price, cost:cost||Math.round(price*0.6), stock});
+    toast(name+' added to the catalogue');
+    viewStock();
+  };
+}
+
+/* ---------- VIEW: REPORTS ---------- */
+function viewReports(){
+  const sales=activeSales();
+  const revenue=sales.reduce((a,s)=>a+s.total,0);
+  const units=sales.reduce((a,s)=>a+s.items.reduce((x,i)=>x+i.qty,0),0);
+  const refunded=db.sales.filter(s=>s.status==='refunded');
+  const refundVal=refunded.reduce((a,s)=>a+s.total,0);
+  const top=topSellers().slice(0,6);
+  const cats=byCategory();
+  const catPeak=Math.max(...cats.map(c=>c[1]),1);
+
+  $('#main').innerHTML=`
+  <div class="view-head">
+    <h2>Reports</h2>
+    <p>Every completed sale since the system went live. Refunded sales are excluded from revenue.</p>
+  </div>
+  <div class="strip">
+    <div><div class="k">Revenue</div><div class="v num">${money(revenue)}</div></div>
+    <div><div class="k">Transactions</div><div class="v num">${sales.length}</div></div>
+    <div><div class="k">Units sold</div><div class="v num">${units}</div></div>
+    <div><div class="k">Refunded</div><div class="v num ${refundVal?'warn':''}">${money(refundVal)}</div></div>
+  </div>
+  <div class="grid2">
+    <div class="block">
+      <h3>Best selling lines</h3>
+      <table>
+        <thead><tr><th>Item</th><th class="r">Units</th><th class="r">Revenue</th></tr></thead>
+        <tbody>${top.map(t=>`<tr><td>${esc(t.name)}</td><td class="r num">${t.units}</td><td class="r num">${money(t.revenue)}</td></tr>`).join('')}</tbody>
+      </table>
+    </div>
+    <div class="block">
+      <h3>Revenue by category</h3>
+      <div class="pad">
+        ${cats.map(([c,v])=>`
+          <div style="margin-bottom:12px">
+            <div style="display:flex;justify-content:space-between;font-size:13.5px;margin-bottom:4px">
+              <span>${c}</span><span class="num">${money(v)}</span></div>
+            <div style="height:8px;background:#EDEFF2;border-radius:2px">
+              <div style="height:8px;width:${(v/catPeak)*100}%;background:var(--denim);border-radius:2px"></div>
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:16px"><button class="btn ghost" id="csv">Download sales as CSV</button></div>`;
+
+  $('#csv').onclick=()=>{
+    const rows=[['Sale','Date','Cashier','Payment','Item','Size','Qty','Unit price','Line total','Status']];
+    db.sales.forEach(s=>s.items.forEach(i=>rows.push([
+      s.id, new Date(s.at).toLocaleString('en-GB'), s.cashier, s.method,
+      i.name, i.size, i.qty, i.price, i.qty*i.price, s.status
+    ])));
+    const csv=rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+    a.download='urban-clothing-sales.csv'; a.click(); URL.revokeObjectURL(a.href);
+    toast('Sales report downloaded');
+  };
+}
+
+/* ---------- VIEW: SALES HISTORY ---------- */
+function viewSales(){
+  const list=[...db.sales].reverse();
+  const canRefund = ui.user.role==='owner';
+  $('#main').innerHTML=`
+  <div class="view-head">
+    <h2>Sales history</h2>
+    <p>${canRefund?'Refunding a sale returns every item to stock and removes it from revenue.':'Only the store owner can process a refund.'}</p>
+  </div>
+  <div class="block">
+    <table>
+      <thead><tr><th>Sale</th><th>Date</th><th>Items</th><th>Served by</th><th>Payment</th><th class="r">Total</th><th>Status</th><th></th></tr></thead>
+      <tbody>${list.map(s=>`<tr>
+        <td class="num">${s.id}</td>
+        <td class="num">${dateShort(s.at)}, ${clock(s.at)}</td>
+        <td>${s.items.map(i=>esc(i.name)+' ('+i.size+' x'+i.qty+')').join('<br>')}</td>
+        <td>${esc(s.cashier)}</td>
+        <td>${esc(s.method)}</td>
+        <td class="r num">${money(s.total)}</td>
+        <td>${s.status==='refunded'?'<span class="pill void">Refunded</span>':'<span class="pill ok">Completed</span>'}</td>
+        <td class="r">${(canRefund && s.status==='completed')?`<button class="btn danger" data-refund="${s.id}">Refund</button>`:''}</td>
+      </tr>`).join('')}</tbody>
+    </table>
+  </div>`;
+  document.querySelectorAll('[data-refund]').forEach(b=>b.onclick=()=>{
+    if(!confirm('Refund sale '+b.dataset.refund+' and return the items to stock?')) return;
+    refundSale(b.dataset.refund); viewSales();
+  });
+}
+
+/* ---------- VIEW: PROJECT SCOPE ---------- */
+function viewProject(){
+  const built=[
+    ['UC-01','User authentication with role based access','Built'],
+    ['UC-02','Manage products and catalogue','Built'],
+    ['UC-03','Process sales at the till','Built'],
+    ['UC-04','Manage inventory and receive stock','Built'],
+    ['UC-05','Generate sales reports','Built'],
+    ['UC-06','Handle returns and refunds','Built'],
+    ['UC-07','Customer accounts and online browsing','Iteration 2'],
+    ['UC-08','Online payment gateway','Iteration 3'],
+    ['UC-09','Order tracking','Iteration 3'],
+    ['UC-10','Supplier purchase orders','Iteration 3']
+  ];
+  $('#main').innerHTML=`
+  <div class="view-head">
+    <h2>Project scope</h2>
+    <p>Retail Clothing Store Management System, Unified Process, Elaboration iteration 1.</p>
+  </div>
+  <div class="grid2">
+    <div class="block">
+      <h3>Use cases</h3>
+      ${built.map(([id,name,st])=>`<div class="usecase">
+        <span class="id">${id}</span><span class="nm">${name}</span>
+        <span class="pill ${st==='Built'?'ok':'out'}">${st}</span></div>`).join('')}
+    </div>
+    <div>
+      <div class="block">
+        <h3>Architecture proved by this prototype</h3>
+        <div class="layer"><b>Presentation</b><span>Role aware navigation, till screen, inventory grid, reporting views.</span></div>
+        <div class="layer"><b>Business logic</b><span>Sale commit with stock validation, VAT split, refund reversal, reorder thresholds, permission checks.</span></div>
+        <div class="layer"><b>Data</b><span>In memory store standing in for the relational schema. Products, variants, sales, sale lines, users.</span></div>
+      </div>
+      <div class="block" style="margin-top:18px">
+        <h3>Risks this prototype retires</h3>
+        <div class="layer"><b>Stock accuracy</b><span>Sales and refunds move stock in one place, so the count cannot drift.</span></div>
+        <div class="layer"><b>Role separation</b><span>The cashier account cannot reach inventory or refunds. Try signing in as vernon.</span></div>
+        <div class="layer"><b>Reporting delay</b><span>Reports read live sale records rather than a nightly export.</span></div>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ---------- BOOT ---------- */
+seed();
+$('#u').focus();
+</script>
+</body>
+</html>

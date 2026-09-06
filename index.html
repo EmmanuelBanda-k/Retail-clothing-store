@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Urban Clothing | Store Management System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Archivo+Narrow:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<!-- ============ SIGN IN ============ -->
+<section id="login">
+  <div class="login-box">
+    <div class="brand-mark">Lusaka branch</div>
+    <h1>Urban Clothing</h1>
+    <p class="login-sub">Store management system. Sign in to continue.</p>
+    <div class="panel login-panel">
+      <p class="err" id="loginErr">Wrong username or PIN. Try again.</p>
+      <label class="field"><span>Username</span><input type="text" id="u" autocomplete="off"></label>
+      <label class="field"><span>PIN</span><input type="password" id="p" autocomplete="off"></label>
+      <button class="btn wide" id="signin">Sign in</button>
+      <div class="accounts">
+        <p>Demo accounts, tap one to fill the form.</p>
+        <button class="acct" data-u="nkosinathi" data-p="1234"><span>nkosinathi</span><em>Store owner</em></button>
+        <button class="acct" data-u="vernon" data-p="1234"><span>vernon</span><em>Cashier</em></button>
+        <button class="acct" data-u="emmanuel" data-p="1234"><span>emmanuel</span><em>Inventory manager</em></button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ APP ============ -->
+<div id="app">
+  <header class="topbar">
+    <div class="store"><strong>Urban Clothing</strong><span>Lusaka branch</span></div>
+    <div class="who">
+      <span class="role-tag" id="roleTag"></span>
+      <b id="userName"></b>
+      <button class="signout" id="signout">Sign out</button>
+    </div>
+  </header>
+  <div class="body">
+    <nav id="nav"></nav>
+    <main id="main"></main>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
