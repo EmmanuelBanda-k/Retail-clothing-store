@@ -27,17 +27,32 @@ jobs:
 
   database-test:
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/urban_clothing
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: urban_clothing
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d urban_clothing"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
 
-      - name: Install Supabase CLI
-        uses: supabase/setup-cli@v1
+      - name: Use Node.js
+        uses: actions/setup-node@v7
         with:
-          version: latest
+          node-version: 20
 
-      - name: Start local Supabase
-        run: supabase start
+      - name: Apply database migrations and seed
+        run: npm run db:setup
 
       - name: Run database tests
-        run: supabase test db
+        run: npm run db:test

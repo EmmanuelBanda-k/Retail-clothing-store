@@ -2,6 +2,13 @@ insert into public.stores (id, code, name, currency_code)
 values ('10000000-0000-0000-0000-000000000001', 'LUSAKA', 'Urban Clothing Lusaka', 'ZMW')
 on conflict (id) do nothing;
 
+insert into public.profiles (id, store_id, username, password_hash, full_name, role)
+values
+  ('20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001', 'nkosinathi', extensions.crypt('1234', extensions.gen_salt('bf')), 'Shumba N. David', 'owner'),
+  ('20000000-0000-0000-0000-000000000002', '10000000-0000-0000-0000-000000000001', 'vernon', extensions.crypt('1234', extensions.gen_salt('bf')), 'Vernon N. Longwani', 'cashier'),
+  ('20000000-0000-0000-0000-000000000003', '10000000-0000-0000-0000-000000000001', 'emmanuel', extensions.crypt('1234', extensions.gen_salt('bf')), 'Emmanuel Banda', 'inventory')
+on conflict (id) do nothing;
+
 with catalogue(name, category, brand, cost, price, sku_prefix, stocks) as (
   values
     ('Oxford shirt, long sleeve', 'Men', 'Kaunda Tailors', 300.00, 480.00, 'URB-1001', array[6,9,4,2]),

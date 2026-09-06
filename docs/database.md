@@ -2,13 +2,13 @@
 
 ## Purpose
 
-Sprint 2 provides a reproducible PostgreSQL foundation for the POS. Migrations define the schema and transaction functions. Seed data creates the Lusaka demonstration catalogue. pgTAP tests verify structure and transaction integrity.
+Sprint 2 provides a reproducible PostgreSQL foundation for the POS. Migrations define the schema and transaction functions. Seed data creates the Lusaka demonstration catalogue. Self-checking SQL scripts verify structure and transaction integrity without Docker or database extensions beyond `pgcrypto`.
 
 ## Model
 
 ```text
 stores
-  ├── profiles → auth.users
+  ├── profiles
   ├── products
   │     └── product_variants
   │              └── inventory
@@ -38,26 +38,26 @@ Money uses `numeric(12,2)` rather than floating-point values. Sale totals includ
 
 ## Security boundary
 
-Row Level Security is enabled on every exposed table. Grants are revoked from `anon` and `authenticated`, and transaction functions are not executable by browser roles yet. This deny-by-default state prevents accidental public access before Sprint 4 adds tested role policies.
+Row Level Security is enabled on every application table, and transaction functions are not executable by `public`. This deny-by-default state prevents accidental application access before Sprint 4 adds a restricted database role and tested policies.
 
 Both transaction functions use `security definer`, an empty `search_path`, and fully qualified object names. Sprint 4 will grant function execution only to roles allowed to perform each operation.
 
 ## Files
 
-- `supabase/migrations/202609060001_initial_pos_schema.sql`: types, tables, constraints, indexes, triggers, and security baseline
-- `supabase/migrations/202609060002_sales_transactions.sql`: atomic sale and refund functions
-- `supabase/seed.sql`: Lusaka store, catalogue variants, inventory, and opening audit entries
-- `supabase/tests/schema.test.sql`: structural and RLS checks
-- `supabase/tests/transactions.test.sql`: sale, insufficient-stock, and refund tests
+- `database/migrations/202609060001_initial_pos_schema.sql`: types, tables, constraints, indexes, triggers, and security baseline
+- `database/migrations/202609060002_sales_transactions.sql`: atomic sale and refund functions
+- `database/seed.sql`: Lusaka store, demo users, catalogue variants, inventory, and opening audit entries
+- `database/tests/schema.test.sql`: structural and RLS checks
+- `database/tests/transactions.test.sql`: sale, insufficient-stock, and refund tests
 
 ## Local verification
 
-The Supabase CLI requires a Docker-compatible runtime:
+Set a connection string for a new local PostgreSQL database:
 
-```bash
-npx supabase start
-npx supabase db reset
-npx supabase test db
+```powershell
+$env:DATABASE_URL='postgresql://postgres:your-password@127.0.0.1:5432/urban_clothing'
+npm run db:setup
+npm run db:test
 ```
 
-GitHub Actions executes the same database tests in a clean environment.
+GitHub Actions executes the same database tests against a temporary PostgreSQL 14 service.

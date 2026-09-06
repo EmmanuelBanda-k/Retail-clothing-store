@@ -8,9 +8,8 @@
     "start": "node tools/serve.mjs",
     "test": "node --test",
     "check": "node --check js/core.js && node --check js/app.js",
-    "db:start": "npx supabase start",
-    "db:reset": "npx supabase db reset",
-    "db:test": "npx supabase test db"
+    "db:setup": "node tools/database.mjs setup",
+    "db:test": "node tools/database.mjs test"
   },
   "engines": {
     "node": ">=20"

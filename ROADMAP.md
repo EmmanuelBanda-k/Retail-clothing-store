@@ -29,9 +29,9 @@ The current application is an architectural prototype. The following sprints tur
 
 ## Sprint 2: PostgreSQL schema and sample data
 
-**Status:** Implemented in the repository. Remote deployment remains pending until a Supabase project is created and linked.
+**Status:** Implemented for PostgreSQL. Local setup requires a database name and connection string; Sprint 3 will add the Node API.
 
-**Goal:** Replace the in-memory data model with a reproducible Supabase database.
+**Goal:** Replace the in-memory data model with a reproducible PostgreSQL database.
 
 - Create tables for profiles, products, product variants, sales, sale items, refunds, and stock movements.
 - Add keys, constraints, indexes, and transaction-safe stock rules.
@@ -39,13 +39,13 @@ The current application is an architectural prototype. The following sprints tur
 - Add realistic seed data for the classroom demonstration.
 - Add database tests for constraints and stock integrity.
 
-**Definition of done:** A new Supabase environment can be built entirely from repository migrations and seed data.
+**Definition of done:** A new PostgreSQL database can be built entirely from repository migrations and seed data.
 
 ## Sprint 3: Persistent application workflows
 
 **Goal:** Make the current screens read and write persistent data.
 
-- Load catalogue and inventory from Supabase.
+- Load catalogue and inventory through the Node API backed by PostgreSQL.
 - Save sales and sale lines as one transaction.
 - Record stock movements for sales, deliveries, and refunds.
 - Load reports from persisted sales.
@@ -58,7 +58,7 @@ The current application is an architectural prototype. The following sprints tur
 
 **Goal:** Replace demo credentials with secure accounts and enforce permissions in the database.
 
-- Add Supabase Authentication.
+- Add server-side session authentication.
 - Map authenticated users to owner, cashier, and inventory roles.
 - Enable Row Level Security on every exposed table.
 - Add allow-and-deny tests for each role.
@@ -72,7 +72,7 @@ The current application is an architectural prototype. The following sprints tur
 **Goal:** Provide a lecturer-accessible demo and the required project evidence.
 
 - Deploy the frontend through GitHub Pages.
-- Configure the production Supabase project and allowed application URLs.
+- Configure the hosted PostgreSQL database, Node API, and allowed application URLs.
 - Run end-to-end tests against a clean demonstration dataset.
 - Prepare architecture, domain model, and sequence diagrams.
 - Write the user guide, test report, limitations, and recovery procedure.

@@ -14,13 +14,13 @@ This project was developed for the Group 2 class project.
 
 ## Current status
 
-The application is suitable for a classroom demonstration. The PostgreSQL schema, migrations, seed catalogue, transaction functions, and database tests are implemented. The browser UI still uses its in-memory adapter until Sprint 3 connects it to Supabase.
+The application is suitable for a classroom demonstration. The PostgreSQL schema, migrations, seed catalogue, transaction functions, and database tests are implemented. The browser UI still uses its in-memory adapter until Sprint 3 connects it through a Node API.
 
 ## Requirements
 
 - Node.js 20 or newer
 - A modern web browser
-- Docker Desktop or another Docker-compatible runtime for local database development
+- PostgreSQL 14 or newer for database development
 
 No third-party packages are required for the current prototype.
 
@@ -48,7 +48,7 @@ Do not open `index.html` directly from the filesystem. The application uses Java
 | `vernon` | `1234` | Cashier |
 | `emmanuel` | `1234` | Inventory manager |
 
-These credentials are public demonstration data. They must be replaced by Supabase Authentication before the application handles real information.
+These credentials are public demonstration data. They must be replaced by server-side authentication before the application handles real information.
 
 ## Automated checks
 
@@ -61,17 +61,17 @@ The tests cover VAT calculations, stock totals, reorder thresholds, permissions,
 
 ## Database development
 
-The `supabase` directory contains the complete database definition. Install Docker Desktop, then run:
+The `database` directory contains the complete PostgreSQL definition. Create an empty development database and provide its connection string:
 
-```bash
-npx supabase start
-npx supabase db reset
-npx supabase test db
+```powershell
+$env:DATABASE_URL='postgresql://postgres:your-password@127.0.0.1:5432/urban_clothing'
+npm run db:setup
+npm run db:test
 ```
 
-`db reset` recreates the local database from the versioned migrations and loads `supabase/seed.sql`. Use it only with a local or disposable development environment.
+`db:setup` applies the versioned migrations and loads `database/seed.sql`. Run it against a new local database. The initial migration creates project objects but does not erase an existing database.
 
-The database currently denies browser roles access by default. Sprint 4 will add operation-specific Row Level Security policies after authentication is connected. Never commit a Supabase secret or service-role key.
+The database enables Row Level Security by default. Sprint 4 will create a restricted application role and operation-specific policies after authentication is connected. Never commit a database password or connection string.
 
 See [Database design](docs/database.md) for the model and transaction behaviour.
 
@@ -94,7 +94,7 @@ Avoid refreshing during the demonstration because the current in-memory dataset 
 ├── js/app.js                  UI rendering and event handling
 ├── js/core.js                 Testable business rules
 ├── test/core.test.js          Unit tests
-├── supabase/                  Database migrations, seed, and pgTAP tests
+├── database/                  PostgreSQL migrations, seed, and SQL tests
 ├── .github/workflows/test.yml Continuous integration
 ├── tools/serve.mjs            Dependency-free development server
 ├── ROADMAP.md                 Delivery sprints

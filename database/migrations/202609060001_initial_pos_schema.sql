@@ -1,3 +1,4 @@
+create schema if not exists extensions;
 create extension if not exists pgcrypto with schema extensions;
 
 create type public.user_role as enum ('owner', 'cashier', 'inventory');
@@ -15,8 +16,10 @@ create table public.stores (
 );
 
 create table public.profiles (
-  id uuid primary key references auth.users(id) on delete cascade,
+  id uuid primary key default extensions.gen_random_uuid(),
   store_id uuid not null references public.stores(id),
+  username text not null unique check (username ~ '^[a-z0-9._-]+$'),
+  password_hash text not null,
   full_name text not null check (length(trim(full_name)) > 0),
   role public.user_role not null,
   active boolean not null default true,
@@ -148,9 +151,8 @@ alter table public.sale_items enable row level security;
 alter table public.refunds enable row level security;
 alter table public.stock_movements enable row level security;
 
-revoke all on all tables in schema public from anon, authenticated;
-revoke execute on all functions in schema public from public, anon, authenticated;
-alter default privileges in schema public revoke execute on functions from public, anon, authenticated;
+revoke execute on all functions in schema public from public;
+alter default privileges in schema public revoke execute on functions from public;
 
 comment on table public.stock_movements is 'Immutable audit trail for every inventory change.';
 comment on column public.sales.total is 'VAT-inclusive transaction total in the store currency.';
