@@ -2,12 +2,13 @@ import { createReadStream } from 'node:fs';
 import { stat } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import { extname, join, normalize } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { createApiHandler } from '../server/api.js';
 import { createDatabase } from '../server/database.js';
 import { createPosService } from '../server/pos-service.js';
 import { createSessionManager } from '../server/session.js';
 
-const root = normalize(new URL('../', import.meta.url).pathname.replace(/^\/(.:)/, '$1'));
+const root = normalize(fileURLToPath(new URL('../', import.meta.url)));
 const port = Number(process.env.PORT || 8765);
 const mimeTypes = {
   '.css': 'text/css; charset=utf-8',
