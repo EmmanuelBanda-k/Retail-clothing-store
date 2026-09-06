@@ -27,6 +27,7 @@ if (!databaseUrl) {
 const setupFiles = [
   'database/migrations/202609060001_initial_pos_schema.sql',
   'database/migrations/202609060002_sales_transactions.sql',
+  'database/migrations/202609070003_sessions_and_rls.sql',
   'database/seed.sql'
 ];
 const testFiles = [

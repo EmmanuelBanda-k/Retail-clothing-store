@@ -44,6 +44,7 @@ When `DATABASE_URL` is absent, the server starts in offline demonstration mode. 
 
 ```powershell
 $env:DATABASE_URL='postgresql://postgres:your-password@127.0.0.1:5432/urban_clothing'
+$env:SESSION_SECRET='replace-this-with-at-least-32-random-characters'
 npm start
 ```
 
@@ -80,7 +81,9 @@ npm run db:test
 
 `db:setup` applies the versioned migrations and loads `database/seed.sql`. Run it against a new local database. The initial migration creates project objects but does not erase an existing database.
 
-The Node server owns the PostgreSQL connection; browser code never receives database credentials. Sprint 4 will add signed sessions and database-enforced role policies. Never commit a database password or connection string.
+The Node server owns the PostgreSQL connection; browser code never receives database credentials. Login creates a signed, HTTP-only, SameSite session cookie. Protected endpoints derive the user, store, and role from that cookie rather than request data. PostgreSQL repeats role and store checks through the restricted `pos_app` role and Row Level Security. Never commit a database password, connection string, or session secret.
+
+Copy `.env.example` only as a reference. The server does not automatically load `.env`; set secrets in the terminal or deployment platform. Generate a different random `SESSION_SECRET` for every deployed environment.
 
 See [Database design](docs/database.md) for the model and transaction behaviour.
 
@@ -118,7 +121,7 @@ Avoid refreshing during the demonstration because the current in-memory dataset 
 - Usernames and PINs are hard-coded for demonstration purposes.
 - Payment choices do not contact real payment providers.
 - Offline demonstration mode resets after refresh; PostgreSQL mode persists.
-- Login verification is server-side, but signed sessions and request authentication remain Sprint 4 work.
+- Demo users still share the classroom PIN `1234`; production accounts need individual strong passwords and a password-change flow.
 - Production backup configuration remains future work.
 - Customer accounts, exchanges, discounts, barcode devices, and supplier orders remain outside the current prototype.
 

@@ -5,6 +5,7 @@ import { extname, join, normalize } from 'node:path';
 import { createApiHandler } from '../server/api.js';
 import { createDatabase } from '../server/database.js';
 import { createPosService } from '../server/pos-service.js';
+import { createSessionManager } from '../server/session.js';
 
 const root = normalize(new URL('../', import.meta.url).pathname.replace(/^\/(.:)/, '$1'));
 const port = Number(process.env.PORT || 8765);
@@ -15,7 +16,10 @@ const mimeTypes = {
 };
 
 const database = process.env.DATABASE_URL ? createDatabase(process.env.DATABASE_URL) : null;
-const api = database ? createApiHandler(createPosService(database)) : null;
+const sessions = database ? createSessionManager(process.env.SESSION_SECRET, {
+  secure: process.env.NODE_ENV === 'production'
+}) : null;
+const api = database ? createApiHandler(createPosService(database), sessions) : null;
 
 const server = createServer(async (request, response) => {
   const requestedPath = decodeURIComponent(new URL(request.url, `http://${request.headers.host}`).pathname);

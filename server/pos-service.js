@@ -13,8 +13,8 @@ const PAYMENT_LABELS = {
 const numeric = value => Number(value);
 
 export function createPosService(database) {
-  async function loadProducts(storeId) {
-    const { rows } = await database.query(`
+  async function loadProducts(session) {
+    const { rows } = await database.userQuery(session, `
       select p.id, p.name, p.category as cat, p.brand,
              p.cost::float8 as cost, p.price::float8 as price,
              regexp_replace(min(pv.sku), '-(S|M|L|XL)$', '') as sku,
@@ -26,12 +26,12 @@ export function createPosService(database) {
       where p.store_id = $1 and p.active
       group by p.id
       order by p.name
-    `, [storeId]);
+    `, [session.storeId]);
     return rows;
   }
 
-  async function loadSales(storeId) {
-    const { rows: sales } = await database.query(`
+  async function loadSales(session) {
+    const { rows: sales } = await database.userQuery(session, `
       select s.id, s.receipt_number, s.completed_at as at, s.status,
              s.total::float8 as total, s.vat::float8 as vat,
              s.payment_method, coalesce(p.full_name, 'Former user') as cashier
@@ -39,10 +39,10 @@ export function createPosService(database) {
       left join public.profiles p on p.id = s.cashier_id
       where s.store_id = $1
       order by s.completed_at
-    `, [storeId]);
+    `, [session.storeId]);
 
     if (!sales.length) return [];
-    const { rows: items } = await database.query(`
+    const { rows: items } = await database.userQuery(session, `
       select si.sale_id, si.variant_id, si.product_name as name,
              regexp_replace(si.sku, '-(S|M|L|XL)$', '') as sku,
              si.size, si.quantity as qty, si.unit_price::float8 as price
@@ -64,8 +64,8 @@ export function createPosService(database) {
     }));
   }
 
-  async function snapshot(storeId) {
-    const [products, sales] = await Promise.all([loadProducts(storeId), loadSales(storeId)]);
+  async function snapshot(session) {
+    const [products, sales] = await Promise.all([loadProducts(session), loadSales(session)]);
     return { products, sales, persistent: true };
   }
 
@@ -88,78 +88,47 @@ export function createPosService(database) {
 
     snapshot,
 
-    async completeSale({ storeId, cashierId, method, items }) {
+    async completeSale(session, { method, items }) {
       const paymentMethod = PAYMENT_METHODS[method];
       if (!paymentMethod) throw Object.assign(new Error('Unsupported payment method'), { statusCode: 400 });
       const payload = items.map(item => ({ variant_id: item.variantId, quantity: item.qty }));
-      const { rows } = await database.query(
+      const { rows } = await database.userQuery(session,
         'select * from public.complete_sale($1, $2, $3::public.payment_method, $4::jsonb)',
-        [storeId, cashierId, paymentMethod, JSON.stringify(payload)]
+        [session.storeId, session.userId, paymentMethod, JSON.stringify(payload)]
       );
-      const data = await snapshot(storeId);
+      const data = await snapshot(session);
       return { sale: data.sales.find(sale => sale.databaseId === rows[0].id), snapshot: data };
     },
 
-    async refundSale({ saleId, ownerId, reason }) {
-      const { rows } = await database.query(
+    async refundSale(session, { saleId, reason }) {
+      await database.userQuery(session,
         'select * from public.refund_sale($1, $2, $3)',
-        [saleId, ownerId, reason]
+        [saleId, session.userId, reason]
       );
-      return snapshot(rows[0].store_id);
+      return snapshot(session);
     },
 
-    async receiveStock({ storeId, userId, variantId, quantity }) {
+    async receiveStock(session, { variantId, quantity }) {
       if (!Number.isInteger(quantity) || quantity < 1) {
         throw Object.assign(new Error('Quantity must be a positive whole number'), { statusCode: 400 });
       }
-      await database.transaction(async client => {
-        const updated = await client.query(`
-          update public.inventory
-          set quantity = quantity + $1
-          where store_id = $2 and variant_id = $3
-          returning variant_id
-        `, [quantity, storeId, variantId]);
-        if (!updated.rowCount) throw Object.assign(new Error('Inventory variant was not found'), { statusCode: 404 });
-        await client.query(`
-          insert into public.stock_movements
-            (store_id, variant_id, changed_by, quantity_change, reason, note)
-          values ($1, $2, $3, $4, 'delivery', 'Received through POS inventory screen')
-        `, [storeId, variantId, userId, quantity]);
-      });
-      return snapshot(storeId);
+      await database.userQuery(session,
+        'select public.receive_stock($1, $2, $3, $4)',
+        [session.storeId, session.userId, variantId, quantity]
+      );
+      return snapshot(session);
     },
 
-    async addProduct({ storeId, userId, name, category, brand, cost, price, quantity }) {
+    async addProduct(session, { name, category, brand, cost, price, quantity }) {
       if (!name?.trim() || !category?.trim() || !brand?.trim() || !(price > 0) || cost < 0 || price < cost) {
         throw Object.assign(new Error('Enter valid product details; selling price must cover cost'), { statusCode: 400 });
       }
       const initialQuantity = Number.isInteger(quantity) && quantity >= 0 ? quantity : 0;
-      await database.transaction(async client => {
-        const product = await client.query(`
-          insert into public.products (store_id, name, category, brand, cost, price)
-          values ($1, $2, $3, $4, $5, $6)
-          returning id
-        `, [storeId, name.trim(), category.trim(), brand.trim(), cost, price]);
-        const baseSku = `URB-${product.rows[0].id.replaceAll('-', '').slice(0, 8).toUpperCase()}`;
-        for (const size of ['S', 'M', 'L', 'XL']) {
-          const variant = await client.query(`
-            insert into public.product_variants (product_id, sku, size, colour)
-            values ($1, $2, $3, 'Default') returning id
-          `, [product.rows[0].id, `${baseSku}-${size}`, size]);
-          await client.query(`
-            insert into public.inventory (store_id, variant_id, quantity)
-            values ($1, $2, $3)
-          `, [storeId, variant.rows[0].id, initialQuantity]);
-          if (initialQuantity > 0) {
-            await client.query(`
-              insert into public.stock_movements
-                (store_id, variant_id, changed_by, quantity_change, reason, note)
-              values ($1, $2, $3, $4, 'opening_stock', 'Product created through inventory screen')
-            `, [storeId, variant.rows[0].id, userId, initialQuantity]);
-          }
-        }
-      });
-      return snapshot(storeId);
+      await database.userQuery(session,
+        'select public.add_product($1, $2, $3, $4, $5, $6, $7, $8)',
+        [session.storeId, session.userId, name.trim(), category.trim(), brand.trim(), cost, price, initialQuantity]
+      );
+      return snapshot(session);
     }
   };
 }

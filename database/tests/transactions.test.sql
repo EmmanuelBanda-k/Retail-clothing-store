@@ -1,5 +1,9 @@
 begin;
 
+select set_config('app.user_id', '20000000-0000-0000-0000-000000000002', true);
+select set_config('app.store_id', '10000000-0000-0000-0000-000000000001', true);
+select set_config('app.user_role', 'cashier', true);
+
 do $$
 declare
   v_variant_id uuid;
@@ -47,6 +51,17 @@ begin
     v_failed := true;
   end;
   if not v_failed then raise exception 'Insufficient stock was accepted'; end if;
+
+  v_failed := false;
+  begin
+    perform public.refund_sale(v_sale.id, '20000000-0000-0000-0000-000000000002', 'Forbidden cashier refund');
+  exception when insufficient_privilege then
+    v_failed := true;
+  end;
+  if not v_failed then raise exception 'Cashier was allowed to refund a sale'; end if;
+
+  perform set_config('app.user_id', '20000000-0000-0000-0000-000000000001', true);
+  perform set_config('app.user_role', 'owner', true);
 
   select * into v_sale
   from public.refund_sale(

@@ -15,13 +15,13 @@ test('PostgreSQL API service persists a sale and refund', { skip: !connectionStr
     assert.equal(cashier.role, 'cashier');
     assert.equal(owner.role, 'owner');
 
-    const before = await service.snapshot(cashier.store_id);
+    const cashierSession = { userId: cashier.id, storeId: cashier.store_id, role: cashier.role, name: cashier.name };
+    const ownerSession = { userId: owner.id, storeId: owner.store_id, role: owner.role, name: owner.name };
+    const before = await service.snapshot(cashierSession);
     const product = before.products.find(item => item.stock.S > 0);
     const startingStock = product.stock.S;
 
-    const completed = await service.completeSale({
-      storeId: cashier.store_id,
-      cashierId: cashier.id,
+    const completed = await service.completeSale(cashierSession, {
       method: 'Cash',
       items: [{ variantId: product.variant_ids.S, qty: 1 }]
     });
@@ -31,9 +31,16 @@ test('PostgreSQL API service persists a sale and refund', { skip: !connectionStr
       startingStock - 1
     );
 
-    const refunded = await service.refundSale({
+    await assert.rejects(
+      service.refundSale(cashierSession, {
+        saleId: completed.sale.databaseId,
+        reason: 'Cashier must not authorise this'
+      }),
+      error => error.code === '42501'
+    );
+
+    const refunded = await service.refundSale(ownerSession, {
       saleId: completed.sale.databaseId,
-      ownerId: owner.id,
       reason: 'Automated API integration test'
     });
     assert.equal(

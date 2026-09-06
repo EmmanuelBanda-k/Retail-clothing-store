@@ -74,3 +74,19 @@ npm start
 ```
 
 If `DATABASE_URL` is missing, the API responds as unavailable and the browser uses its seeded in-memory fallback. This provides an offline demonstration path without weakening the persistent implementation.
+
+## Authentication and database authorisation
+
+Persistent login compares the submitted PIN with the `pgcrypto` password hash on the server. The API returns a signed session cookie with these protections:
+
+- `HttpOnly` prevents browser JavaScript from reading the token.
+- `SameSite=Strict` limits cross-site requests.
+- `Secure` is enabled when `NODE_ENV=production`.
+- The signed payload expires after eight hours.
+- Mutation endpoints reject mismatched browser origins.
+
+The API ignores client-supplied identity fields. It reads the user ID, store ID, and role from the verified cookie.
+
+For each application query, the database connection starts a transaction, assumes the `pos_app` role, and sets transaction-local identity values. Row Level Security limits reads to the signed-in user's store. Cashiers can complete sales. Owners can issue refunds. Owners and inventory managers can add products or receive stock.
+
+Security-definer functions perform the same role and identity checks before changing data. Direct table writes are not granted to `pos_app`, so modifying browser requests cannot bypass the transaction rules.

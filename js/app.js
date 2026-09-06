@@ -81,7 +81,7 @@ async function commitSale(items, method, cashier, when, silent){
   if(persistent){
     try{
       const result=await posApi.completeSale({
-        storeId:ui.user.store_id, cashierId:ui.user.id, method, items
+        method, items
       });
       db.products=result.snapshot.products; db.sales=result.snapshot.sales;
       if(!silent) toast('Sale '+result.sale.id+' recorded');
@@ -103,7 +103,7 @@ async function refundSale(id){
   if(persistent){
     try{
       const sale=db.sales.find(item=>item.id===id);
-      const snapshot=await posApi.refundSale(sale.databaseId,{ownerId:ui.user.id,reason:'Customer return'});
+      const snapshot=await posApi.refundSale(sale.databaseId,{reason:'Customer return'});
       db.products=snapshot.products; db.sales=snapshot.sales;
       toast('Sale '+id+' refunded, stock returned');
       return true;
@@ -179,13 +179,17 @@ async function attemptLogin(){
   try{
     if(persistent){
       found=(await posApi.login(u,p)).user;
-      const snapshot=await posApi.snapshot(found.store_id);
+      const snapshot=await posApi.snapshot();
       db={...db,...snapshot};
     }else found=db.users.find(x=>x.u===u && x.pin===p);
   }catch(error){ toast(error.message); }
   button.disabled=false; button.textContent='Sign in';
   if(!found){ $('#loginErr').style.display='block'; return; }
   $('#loginErr').style.display='none';
+  openApp(found);
+}
+
+function openApp(found){
   ui = {user:found, view:'dash', cart:[], search:'', cat:'All', lastReceipt:null};
   $('#login').style.display='none';
   $('#app').style.display='flex';
@@ -193,7 +197,8 @@ async function attemptLogin(){
   $('#roleTag').textContent={owner:'Owner',cashier:'Cashier',inventory:'Inventory'}[found.role];
   render();
 }
-$('#signout').onclick=()=>{
+$('#signout').onclick=async()=>{
+  if(persistent){ try{ await posApi.logout(); }catch{} }
   $('#app').style.display='none'; $('#login').style.display='grid';
   $('#u').value=''; $('#p').value=''; ui=null;
 };
@@ -435,7 +440,6 @@ function viewStock(){
     if(persistent){
       try{
         const snapshot=await posApi.receiveStock({
-          storeId:ui.user.store_id,userId:ui.user.id,
           variantId:p.variant_ids[size.toUpperCase()],quantity:n
         });
         db.products=snapshot.products; db.sales=snapshot.sales;
@@ -452,7 +456,7 @@ function viewStock(){
     if(persistent){
       try{
         const snapshot=await posApi.addProduct({
-          storeId:ui.user.store_id,userId:ui.user.id,name,category:$('#nCat').value,
+          name,category:$('#nCat').value,
           brand,cost:cost||Math.round(price*0.6),price,quantity:qty||0
         });
         db.products=snapshot.products; db.sales=snapshot.sales;
@@ -604,6 +608,10 @@ function viewProject(){
 seed();
 databaseAvailable().then(available=>{
   persistent=available;
-  if(available) toast('PostgreSQL persistence is available');
+  if(available){
+    posApi.session().then(async({user})=>{
+      const snapshot=await posApi.snapshot(); db={...db,...snapshot}; openApp(user);
+    }).catch(()=>toast('PostgreSQL persistence is available'));
+  }
 });
 $('#u').focus();

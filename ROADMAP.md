@@ -58,13 +58,15 @@ The current application is an architectural prototype. The following sprints tur
 
 ## Sprint 4: Authentication and authorisation
 
+**Status:** Implemented with signed HTTP-only sessions, protected API routes, a restricted PostgreSQL role, and Row Level Security.
+
 **Goal:** Replace demo credentials with secure accounts and enforce permissions in the database.
 
 - Add server-side session authentication.
 - Map authenticated users to owner, cashier, and inventory roles.
 - Enable Row Level Security on every exposed table.
 - Add allow-and-deny tests for each role.
-- Remove hard-coded PINs from frontend code.
+- Remove hard-coded PIN verification from persistent frontend operation while retaining labelled offline demo accounts.
 - Keep all secret and service credentials outside the repository.
 
 **Definition of done:** Users cannot bypass role restrictions by editing browser code or calling the API directly.

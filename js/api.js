@@ -21,7 +21,9 @@ export const posApi = {
   login: (username, pin) => request('/api/login', {
     method: 'POST', body: JSON.stringify({ username, pin })
   }),
-  snapshot: storeId => request(`/api/snapshot?storeId=${encodeURIComponent(storeId)}`),
+  session: () => request('/api/session'),
+  logout: () => request('/api/logout', { method: 'POST' }),
+  snapshot: () => request('/api/snapshot'),
   completeSale: data => request('/api/sales', { method: 'POST', body: JSON.stringify(data) }),
   refundSale: (saleId, data) => request(`/api/sales/${saleId}/refund`, {
     method: 'POST', body: JSON.stringify(data)
