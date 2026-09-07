@@ -148,6 +148,16 @@ function byCategory(){
   return Object.entries(map).sort((a,b)=>b[1]-a[1]);
 }
 
+function topCategoryToday(){
+  const map={};
+  todaySales().forEach(s=>s.items.forEach(it=>{
+    const p=findProduct(it.sku); const c=p?p.cat:'Other';
+    map[c]=(map[c]||0)+it.qty*it.price;
+  }));
+  const entries=Object.entries(map).sort((a,b)=>b[1]-a[1]);
+  return entries.length ? entries[0] : null;
+}
+
 function can(view){ return canAccess(ui.user.role,view); }
 
 /* ---------- HELPERS ---------- */
@@ -224,6 +234,7 @@ function viewDash(){
   const revenue = t.reduce((a,s)=>a+s.total,0);
   const units = t.reduce((a,s)=>a+s.items.reduce((x,i)=>x+i.qty,0),0);
   const low = lowStock();
+  const topCat = topCategoryToday();
   const bars = last7();
   const peak = Math.max(...bars.map(b=>b.total),1);
   const recent = activeSales().slice(-6).reverse();
@@ -234,9 +245,11 @@ function viewDash(){
     <p>${new Date().toLocaleDateString('en-GB',{weekday:'long', day:'numeric', month:'long', year:'numeric'})}</p>
   </div>
   <div class="strip">
+    <div><div class="k">Sales today</div><div class="v num">${t.length}</div></div>
     <div><div class="k">Takings today</div><div class="v num">${money(revenue)}</div></div>
     <div><div class="k">Items sold today</div><div class="v num">${units}</div></div>
-    <div><div class="k">Lines running low</div><div class="v num ${low.length?'warn':''}">${low.length}</div></div>
+    <div><div class="k">Low stock alerts</div><div class="v num ${low.length?'warn':''}">${low.length}</div></div>
+    <div><div class="k">Top category today</div><div class="v num">${topCat?esc(topCat[0]):'—'}</div><div class="k" style="font-size:11px;margin-top:2px">${topCat?money(topCat[1]):''}</div></div>
     <div><div class="k">Stock at cost</div><div class="v num">${money(stockValue())}</div></div>
   </div>
   <div class="grid2">
