@@ -129,6 +129,38 @@ function last7(){
   return out;
 }
 
+function salesTrend(days=14){
+  const out=[];
+  for(let i=days-1;i>=0;i--){
+    const d=new Date(); d.setDate(d.getDate()-i);
+    const tot=activeSales().filter(s=>sameDay(s.at,d)).reduce((t,s)=>t+s.total,0);
+    out.push({d, total:tot});
+  }
+  return out;
+}
+
+function sparkline(data, width=600, height=80){
+  const max=Math.max(...data.map(d=>d.total),1);
+  const step=width/(data.length-1||1);
+  const points=data.map((d,i)=>{
+    const x=i*step;
+    const y=height-(d.total/max)*(height-8)-4;
+    return `${x},${y}`;
+  }).join(' ');
+  const area=points.split(' ').map((p,i)=>{
+    const [x,y]=p.split(',');
+    return `${i===0?'M':'L'}${x} ${y}`;
+  }).join(' ')+` L${width},${height} L0,${height} Z`;
+  return `<svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" style="width:100%;height:${height}px">
+    <path d="${area}" fill="var(--denim)" fill-opacity="0.12"/>
+    <path d="${points.split(' ').map((p,i)=>`${i===0?'M':'L'}${p}`).join(' ')}" fill="none" stroke="var(--denim)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    ${data.map((d,i)=>{
+      const [x,y]=points.split(' ')[i].split(',');
+      return `<circle cx="${x}" cy="${y}" r="3" fill="var(--surface)" stroke="var(--denim)" stroke-width="1.5"/>`;
+    }).join('')}
+  </svg>`;
+}
+
 function topSellers(){
   const map={};
   activeSales().forEach(s=>s.items.forEach(it=>{
@@ -505,6 +537,12 @@ function viewReports(){
     <div><div class="k">Transactions</div><div class="v num">${sales.length}</div></div>
     <div><div class="k">Units sold</div><div class="v num">${units}</div></div>
     <div><div class="k">Refunded</div><div class="v num ${refundVal?'warn':''}">${money(refundVal)}</div></div>
+  </div>
+  <div class="block" style="margin-bottom:18px">
+    <h3>Sales trend, last 14 days</h3>
+    <div class="pad" style="padding:12px 16px">
+      ${sparkline(salesTrend(14).map(d=>d.total))}
+    </div>
   </div>
   <div class="grid2">
     <div class="block">
