@@ -220,3 +220,13 @@ tbody tr:hover{background:#F7F8FA}
   main{padding:16px 14px 50px}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+@media print{
+  body{background:#fff;margin:0}
+  #login,#nav,.topbar,.view-head,.strip,.grid2,.till,.toast,.btn,.signout,.block>h3,.block>.searchrow,.block>table,.block>.inline-form{display:none!important}
+  .block{border:none!important;background:none!important;box-shadow:none!important;margin:0!important;padding:0!important}
+  .receipt{max-width:300px;margin:0 auto;padding:24px;font-family:'Courier New',Courier,monospace;font-size:12px;line-height:1.6;color:#000}
+  .receipt hr{border-color:#000}
+  .receipt .rline{display:flex;justify-content:space-between;margin-bottom:4px}
+  .receipt .num{font-variant-numeric:tabular-nums}
+}

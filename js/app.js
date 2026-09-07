@@ -437,6 +437,7 @@ function receiptBlock(s){
       <hr>
       <div style="color:var(--ink-soft)">Stock levels updated. Returns accepted within 14 days with this receipt.</div>
     </div>
+    <div style="padding:0 16px 14px"><button class="btn quiet" onclick="window.print()">Print receipt</button></div>
   </div>`;
 }
 
